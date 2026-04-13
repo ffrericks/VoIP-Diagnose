@@ -537,7 +537,8 @@
                   <textarea class="form-control font-monospace small mb-2" rows="5"
                             id="console-dump-area"
                             placeholder="Plak hier de console log van de webphone..."
-                            oninput="state.consoleDump = this.value.trim() || null; regenerateReport()"></textarea>
+                            oninput="state.consoleDump = this.value.trim() || null; _parseAndRenderCalls(); regenerateReport()"></textarea>
+                  <div id="console-calls-summary"></div>
                 </div>
               </div>
 
@@ -592,6 +593,7 @@
 
     // Stap 4 — rapport
     consoleDump: null,      // optionele tekst van gebruiker (webphone console export)
+    parsedCalls: null,      // array van gesprekken geparsed uit de console log
     timestamp: null         // ISO date string, gezet bij rapportgeneratie
   }
 
@@ -1720,6 +1722,27 @@
     }
     sep()
 
+    // ── Gesprekken uit console log ──
+    if (state.parsedCalls && state.parsedCalls.length > 0) {
+      title('GESPREKKEN (uit console log)')
+      state.parsedCalls.forEach((c, i) => {
+        const start   = _parseConsoleTimestamp(c.startTime)
+        const dateStr = start ? start.toLocaleDateString('nl-NL') : '?'
+        const timeStr = start ? start.toLocaleTimeString('nl-NL') : '?'
+        const durStr  = c.durationSec !== null ? _formatDuration(c.durationSec) : '?'
+        const dir     = c.direction === 'outgoing' ? 'Uitgaand' : 'Inkomend'
+        const mos     = c.mosAvg !== undefined ? c.mosAvg.toFixed(2) : '?'
+        const num     = c.number ? ` | ${c.number}` : ''
+        lines.push(`Gesprek ${i + 1}: ${dateStr} ${timeStr} | ${dir}${num} | Duur: ${durStr} | MOS: ${mos}`)
+      })
+      const withMOS = state.parsedCalls.filter(c => c.mosAvg !== undefined)
+      if (withMOS.length > 0) {
+        const overall = (withMOS.reduce((s, c) => s + c.mosAvg, 0) / withMOS.length).toFixed(2)
+        line('Gemiddelde MOS alle gesprekken', overall)
+      }
+      sep()
+    }
+
     // ── Console dump ──
     if (state.consoleDump) {
       title('WEBPHONE CONSOLE LOG')
@@ -1770,6 +1793,151 @@
     const fb = document.getElementById('copy-feedback')
     fb.classList.remove('d-none')
     setTimeout(() => fb.classList.add('d-none'), 3000)
+  }
+
+  // ── Console log parser ───────────────────────────────────────────────────
+
+  function _parseAndRenderCalls() {
+    state.parsedCalls = state.consoleDump ? _parseConsoleDump(state.consoleDump) : []
+    _renderCallsSummary()
+  }
+
+  function _parseConsoleDump(text) {
+    const sessions = {}
+
+    for (const line of text.split('\n')) {
+      const tsMatch = line.match(/\[(\d{1,2}-\d{1,2}-\d{4},\s*\d{2}:\d{2}:\d{2})\]/)
+      if (!tsMatch) continue
+      const ts      = tsMatch[1]
+      const content = line.slice(tsMatch.index + tsMatch[0].length).trim()
+
+      // Gesprek geaccepteerd (uit- of inkomend)
+      const accepted = content.match(/^(outgoing|incoming) session is accepted.*?sessionId:\s*'([^']+)'/)
+      if (accepted) {
+        const [, dir, id] = accepted
+        if (!sessions[id]) sessions[id] = { id }
+        sessions[id].direction = dir
+        sessions[id].startTime = ts
+      }
+
+      // Gesprek beëindigd
+      const terminated = content.match(/^(outgoing|incoming) call was terminated.*?sessionId:\s*'([^']+)'/)
+      if (terminated) {
+        const [, dir, id] = terminated
+        if (!sessions[id]) sessions[id] = { id }
+        if (!sessions[id].direction) sessions[id].direction = dir
+        sessions[id].endTime = ts
+      }
+
+      // Telefoonnummer (beller of gebelde) — indien aanwezig in de log
+      const numMatch = content.match(/(?:number|phoneNumber|remoteNumber):\s*'([^']+)'.*?sessionId:\s*'([^']+)'/)
+        || content.match(/sessionId:\s*'([^']+)'.*?(?:number|phoneNumber|remoteNumber):\s*'([^']+)'/)
+      if (numMatch) {
+        // Patroon 1: number eerst, dan sessionId
+        const num = numMatch[1].match(/^\+?[\d\s()-]+$/) ? numMatch[1] : null
+        const sid = numMatch[2]
+        if (num && sid && sessions[sid]) sessions[sid].number = num
+      }
+
+      // MOS eindstats bij gesprekseinde
+      const mosTerm = content.match(/^MOS stats for terminated (\S+) - average:([\d.]+),\s*highest:([\d.]+),\s*lowest:([\d.]+)/)
+      if (mosTerm) {
+        const [, id, avg, highest, lowest] = mosTerm
+        if (!sessions[id]) sessions[id] = { id }
+        sessions[id].mosAvg     = parseFloat(avg)
+        sessions[id].mosHighest = parseFloat(highest)
+        sessions[id].mosLowest  = parseFloat(lowest)
+      }
+    }
+
+    return Object.values(sessions)
+      .filter(s => s.startTime || s.endTime || s.mosAvg !== undefined)
+      .map(s => {
+        const start = _parseConsoleTimestamp(s.startTime)
+        const end   = _parseConsoleTimestamp(s.endTime)
+        return { ...s, durationSec: (start && end) ? Math.round((end - start) / 1000) : null }
+      })
+      .sort((a, b) => {
+        const ta = _parseConsoleTimestamp(a.startTime || a.endTime) || 0
+        const tb = _parseConsoleTimestamp(b.startTime || b.endTime) || 0
+        return ta - tb
+      })
+  }
+
+  function _parseConsoleTimestamp(ts) {
+    if (!ts) return null
+    const m = ts.match(/(\d{1,2})-(\d{1,2})-(\d{4}),\s*(\d{2}):(\d{2}):(\d{2})/)
+    if (!m) return null
+    return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6])
+  }
+
+  function _formatDuration(seconds) {
+    if (seconds < 60) return `${seconds}s`
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m}m ${s.toString().padStart(2, '0')}s`
+  }
+
+  function _renderCallsSummary() {
+    const el = document.getElementById('console-calls-summary')
+    if (!el) return
+
+    const calls = state.parsedCalls
+    if (!calls || calls.length === 0) { el.innerHTML = ''; return }
+
+    const withMOS   = calls.filter(c => c.mosAvg !== undefined)
+    const overallMOS = withMOS.length > 0
+      ? (withMOS.reduce((s, c) => s + c.mosAvg, 0) / withMOS.length).toFixed(2)
+      : null
+
+    const rows = calls.map(c => {
+      const start    = _parseConsoleTimestamp(c.startTime)
+      const dateStr  = start ? start.toLocaleDateString('nl-NL') : '—'
+      const timeStr  = start ? start.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'
+      const durStr   = c.durationSec !== null ? _formatDuration(c.durationSec) : '—'
+      const dirIcon  = c.direction === 'outgoing' ? '↗' : c.direction === 'incoming' ? '↙' : '·'
+      const dirLabel = c.direction === 'outgoing' ? 'Uitgaand' : c.direction === 'incoming' ? 'Inkomend' : '—'
+      const numCell  = c.number ? `<div class="text-muted" style="font-size:0.72rem">${c.number}</div>` : ''
+
+      let mosCell = '<span class="text-muted">—</span>'
+      if (c.mosAvg !== undefined) {
+        const mos      = c.mosAvg.toFixed(2)
+        const mosClass = c.mosAvg >= 4.0 ? 'text-success' : c.mosAvg >= 3.6 ? 'text-warning' : 'text-danger'
+        const mosLabel = c.mosAvg >= 4.0 ? 'Goed' : c.mosAvg >= 3.6 ? 'Matig' : 'Slecht'
+        mosCell = `<span class="${mosClass} fw-semibold">${mos}</span> <span class="text-muted" style="font-size:0.72rem">${mosLabel}</span>`
+      }
+
+      return `
+        <tr>
+          <td class="small ps-3">${dateStr}</td>
+          <td class="small">${timeStr}</td>
+          <td class="small">${dirIcon} ${dirLabel}${numCell}</td>
+          <td class="small">${durStr}</td>
+          <td class="small pe-3">${mosCell}</td>
+        </tr>
+      `
+    }).join('')
+
+    el.innerHTML = `
+      <div class="result-card result-secondary p-0 overflow-hidden">
+        <div class="px-3 pt-2 pb-1 d-flex justify-content-between align-items-center border-bottom">
+          <span class="small fw-semibold">${calls.length} gesprek${calls.length !== 1 ? 'ken' : ''} gevonden</span>
+          ${overallMOS ? `<span class="small text-muted">Gem. MOS: <strong>${overallMOS}</strong></span>` : ''}
+        </div>
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr class="table-light">
+              <th class="small fw-semibold ps-3">Datum</th>
+              <th class="small fw-semibold">Tijd</th>
+              <th class="small fw-semibold">Richting</th>
+              <th class="small fw-semibold">Duur</th>
+              <th class="small fw-semibold pe-3">MOS</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `
   }
 
   console.log('[report] Report module geladen')

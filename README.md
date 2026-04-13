@@ -24,6 +24,8 @@ The tool walks through four steps:
 3. **Network analysis** — Automatic and optional manual tests
 4. **Report** — A plain-text summary ready to paste into a support ticket
 
+For webphone users, an optional console log can be added to the report. The tool automatically parses it for individual calls and displays a summary table with call direction, duration, and MOS score per call.
+
 ---
 
 ## Why certain choices were made
@@ -152,6 +154,34 @@ The terminal ping parser handles:
 | macOS | `round-trip min/avg/max/stddev = 10.5/18.2/25.1/4.3 ms` |
 | Linux | `rtt min/avg/max/mdev = 10.5/18.2/25.1/4.3 ms` |
 | IPv6 fallback | Parses individual `time=Xms` lines when no summary is present |
+
+---
+
+## Console log parsing (webphone only)
+
+When a webphone console log is pasted into the report step, the tool automatically extracts all calls from it.
+
+**What is parsed:**
+
+| Field | Source in log |
+|-------|---------------|
+| Date and time | Timestamp at the start of each log line |
+| Direction | `outgoing` / `incoming` in the session event |
+| Duration | Time between `session is accepted` and `call was terminated` |
+| MOS score | `MOS stats for terminated <sessionId>` line |
+| Phone number | `number` / `phoneNumber` / `remoteNumber` field, if present |
+
+**MOS thresholds:**
+
+| Score | Assessment |
+|-------|------------|
+| ≥ 4.0 | Good |
+| 3.6–4.0 | Moderate |
+| < 3.6 | Poor |
+
+The parsed calls appear as a table directly below the paste area, and as a structured `CALLS` section in the copyable report text. The overall average MOS across all calls is shown in both places.
+
+The log lines do not need to be clean — the parser handles the `filename.js:linenum ` prefix that browsers add when copying from the DevTools console.
 
 ---
 
