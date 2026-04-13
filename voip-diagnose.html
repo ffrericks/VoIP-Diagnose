@@ -1153,7 +1153,9 @@
       // Mac/Linux: "  1  192.168.1.1 (192.168.1.1)  0.750 ms  0.586 ms  0.547 ms"
       // Timeout:  "  3  * * *"
 
-      const winMatch = line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}([\d.]+)\s*$/)
+      // Windows: "  1  <1 ms  <1 ms  <1 ms  router [10.13.0.1]" of "  1  <1 ms  10.13.0.1"
+      const winMatch = line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}.*\[([\d.]+)\]\s*$/) ||
+                       line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}([\d.]+)\s*$/)
       const unixMatch = line.match(/^\s*(\d+)\s+([\d.]+)\s+\([\d.]+\)/)
       const timeoutMatch = line.match(/^\s*(\d+)\s+\*\s+\*\s+\*/)
 
