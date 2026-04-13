@@ -1154,10 +1154,16 @@
       // Timeout:  "  3  * * *"
 
       // Windows: "  1  <1 ms  <1 ms  <1 ms  router [10.13.0.1]" of "  1  <1 ms  10.13.0.1"
+      // Windows met hostnaam: "  1  <1 ms  <1 ms  <1 ms  router [10.13.0.1]"
+      // Windows zonder hostnaam: "  1  <1 ms  <1 ms  <1 ms  10.13.0.1"
       const winMatch = line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}.*\[([\d.]+)\]\s*$/) ||
                        line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}([\d.]+)\s*$/)
-      const unixMatch = line.match(/^\s*(\d+)\s+([\d.]+)\s+\([\d.]+\)/)
-      const timeoutMatch = line.match(/^\s*(\d+)\s+\*\s+\*\s+\*/)
+      // Mac/Linux met haakjes: "  1  192.168.1.1 (192.168.1.1)  0.725 ms"
+      // Mac/Linux zonder haakjes: "  1  192.168.1.1  0.725ms  0.557ms"
+      const unixMatch = line.match(/^\s*(\d+)\s+([\d.]+)\s+\([\d.]+\)/) ||
+                        line.match(/^\s*(\d+)\s+([\d.]+)\s+[\d.]+ms/)
+      // Timeout: 1, 2 of 3 sterretjes
+      const timeoutMatch = line.match(/^\s*(\d+)\s+\*[\s*]+$/)
 
       if (winMatch) {
         hops.push({ nr: +winMatch[1], ip: winMatch[2], timeout: false })
