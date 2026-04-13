@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voys VoIP Diagnose</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+  /* ═══════════════════════════════════════
+     Voys brand theme — Bootstrap 5 overrides
+     Primaire kleur: #270697
+     Font: Montserrat
+  ═══════════════════════════════════════ */
+
+  :root {
+    --bs-primary: #270697;
+    --bs-primary-rgb: 39, 6, 151;
+    --bs-font-sans-serif: 'Montserrat', sans-serif;
+    --bs-link-color: #270697;
+    --bs-link-hover-color: #1d0572;
+  }
+
+  body {
+    background-color: #f5f4fb;
+    color: #1a1a2e;
+  }
+
+  /* ── Wizard stap animatie ── */
+  .wizard-step {
+    animation: fadeIn 0.2s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Stap badge (bijv. "Stap 1 van 4") ── */
+  .step-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #270697;
+    background-color: rgba(39, 6, 151, 0.08);
+    padding: 3px 12px;
+    border-radius: 12px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  /* ── Apparaattype knoppen (grote selectie, Stap 1) ── */
+  .device-btn {
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+    border-width: 2px;
+    transition: all 0.15s ease;
+    line-height: 1.4;
+  }
+
+  .device-btn:hover {
+    background-color: rgba(39, 6, 151, 0.04);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(39, 6, 151, 0.12);
+  }
+
+  /* ── Card ── */
+  .card {
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 14px;
+  }
+
+  /* ── Primaire knop ── */
+  .btn-primary {
+    background-color: #270697;
+    border-color: #270697;
+  }
+  .btn-primary:hover,
+  .btn-primary:focus {
+    background-color: #1d0572;
+    border-color: #1d0572;
+  }
+  .btn-primary:active {
+    background-color: #160455;
+    border-color: #160455;
+  }
+
+  /* ── Outline primaire knop ── */
+  .btn-outline-primary {
+    color: #270697;
+    border-color: #270697;
+  }
+  .btn-outline-primary:hover {
+    background-color: #270697;
+    border-color: #270697;
+    color: #fff;
+  }
+
+  /* ── Tekst primaire kleur ── */
+  .text-primary {
+    color: #270697 !important;
+  }
+
+  /* ── Alert primaire kleur (stappenplan achtergrond) ── */
+  .alert-primary {
+    background-color: rgba(39, 6, 151, 0.06);
+    border-color: rgba(39, 6, 151, 0.18);
+    color: #1a1a2e;
+  }
+
+  /* ── Focus state voor form elementen ── */
+  .form-select:focus,
+  .form-control:focus {
+    border-color: #270697;
+    box-shadow: 0 0 0 0.2rem rgba(39, 6, 151, 0.15);
+  }
+
+  /* ── Terug-link knop ── */
+  .btn-link.text-muted {
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+  .btn-link.text-muted:hover {
+    color: #270697 !important;
+  }
+
+  /* ── Resultaatkaarten (Stap 3) ── */
+  .result-card {
+    border-radius: 10px;
+    padding: 0.875rem 1rem;
+    border: 1px solid;
+  }
+  .result-card.result-success {
+    background-color: rgba(25, 135, 84, 0.06);
+    border-color: rgba(25, 135, 84, 0.25);
+  }
+  .result-card.result-danger {
+    background-color: rgba(220, 53, 69, 0.06);
+    border-color: rgba(220, 53, 69, 0.25);
+  }
+  .result-card.result-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.4);
+  }
+  .result-card.result-secondary {
+    background-color: rgba(108, 117, 125, 0.08);
+    border-color: rgba(108, 117, 125, 0.2);
+    color: #6c757d;
+  }
+  .result-card.result-loading {
+    background-color: rgba(39, 6, 151, 0.04);
+    border-color: rgba(39, 6, 151, 0.12);
+  }
+  .result-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .result-value {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .result-note {
+    font-size: 0.78rem;
+    color: #6c757d;
+    margin-top: 5px;
+  }
+  </style>
+</head>
+<body>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-8 col-lg-6">
+
+        <!-- Header -->
+        <div class="mb-4">
+          <img src="https://www.voys.nl/app/themes/voys/public/build/assets/logo-C9xaOGPZ.svg"
+               alt="Voys" height="32" class="mb-3 d-block">
+          <h1 class="h3 fw-bold text-primary mb-1">VoIP Diagnose</h1>
+          <p class="text-muted mb-0 small">Analyseer uw verbinding stap voor stap</p>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STAP 1 — Apparaattype kiezen
+        ═══════════════════════════════════════ -->
+        <div id="step-1" class="wizard-step">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <div class="step-badge mb-3">Stap 1 van 4</div>
+              <h2 class="h5 fw-semibold mb-1">Welk apparaat heeft het probleem?</h2>
+              <p class="text-muted small mb-4">Kies het type apparaat waarmee u belt</p>
+
+              <div class="d-grid gap-3">
+                <button class="btn btn-outline-primary btn-lg text-start device-btn"
+                        onclick="selectDeviceType('webphone')">
+                  <span class="fw-semibold d-block">Webphone</span>
+                  <span class="text-muted small fw-normal">Belt via de browser of desktop app</span>
+                </button>
+                <button class="btn btn-outline-primary btn-lg text-start device-btn"
+                        onclick="selectDeviceType('deskphone')">
+                  <span class="fw-semibold d-block">Vast of DECT toestel</span>
+                  <span class="text-muted small fw-normal">Fysiek toestel op het bureau of draadloze handset</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STAP 2A — Vast / DECT toestel
+        ═══════════════════════════════════════ -->
+        <div id="step-2a" class="wizard-step d-none">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <button class="btn btn-link btn-sm text-muted p-0 mb-3"
+                      onclick="showStep('step-1')">← Terug</button>
+              <div class="step-badge mb-3">Stap 2 van 4</div>
+              <h2 class="h5 fw-semibold mb-1">Gegevens toestel</h2>
+              <p class="text-muted small mb-4">Kies het merk van uw toestel</p>
+
+              <!-- Merkkeuze -->
+              <div class="mb-3">
+                <label class="form-label fw-medium" for="brand-select">Merk</label>
+                <select class="form-select" id="brand-select" onchange="onBrandChange()">
+                  <option value="">— Kies een merk —</option>
+                  <option value="yealink">Yealink</option>
+                  <option value="gigaset">Gigaset</option>
+                  <option value="snom">Snom</option>
+                  <option value="grandstream">Grandstream</option>
+                  <option value="cisco">Cisco SPA</option>
+                  <option value="other">Overig</option>
+                </select>
+              </div>
+
+              <!-- Type selectie (alleen Yealink) -->
+              <div class="mb-3 d-none" id="model-type-group">
+                <label class="form-label fw-medium">Type</label>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-outline-secondary btn-sm" id="type-vast"
+                          onclick="selectModelType('Vast toestel')">Vast toestel</button>
+                  <button class="btn btn-outline-secondary btn-sm" id="type-dect"
+                          onclick="selectModelType('DECT basisstation')">DECT basisstation</button>
+                </div>
+              </div>
+
+              <!-- Modelnaam (vrije tekst, voor rapport) -->
+              <div class="mb-3 d-none" id="model-name-group">
+                <label class="form-label fw-medium" for="model-input">
+                  Model <span class="text-muted fw-normal">(optioneel)</span>
+                </label>
+                <input type="text" class="form-control" id="model-input"
+                       placeholder="bijv. T54W"
+                       oninput="state.model = this.value.trim() || null">
+              </div>
+
+              <!-- IP stappenplan (verschijnt na merkkeuze) -->
+              <div class="d-none" id="stappenplan-container">
+                <div class="alert alert-primary p-3 mb-3">
+                  <p class="fw-semibold mb-2 small">Zo vindt u het IP-adres van uw toestel:</p>
+                  <ol class="mb-0 ps-3 small" id="stappenplan-steps"></ol>
+                </div>
+
+                <!-- IP-adres invoer (na stappenplan) -->
+                <div class="mb-4">
+                  <label class="form-label fw-medium" for="device-ip-input">IP-adres van het toestel</label>
+                  <input type="text" class="form-control" id="device-ip-input"
+                         placeholder="bijv. 192.168.1.100"
+                         oninput="onDeviceIPInput(this.value)">
+                  <div class="form-text">Voer het IP-adres in dat op uw toestel wordt weergegeven</div>
+                </div>
+              </div>
+
+              <!-- IP invoer voor 'Overig' (geen stappenplan) -->
+              <div class="d-none mb-4" id="other-ip-container">
+                <label class="form-label fw-medium" for="other-ip-input">IP-adres van het toestel</label>
+                <input type="text" class="form-control" id="other-ip-input"
+                       placeholder="bijv. 192.168.1.100"
+                       oninput="onDeviceIPInput(this.value)">
+                <div class="form-text">Raadpleeg de handleiding van uw toestel om het IP-adres te vinden</div>
+              </div>
+
+              <!-- Volgende knop (verschijnt na IP invoer) -->
+              <button class="btn btn-primary w-100 d-none" id="btn-2a-next"
+                      onclick="goToNetworkAnalysis()">
+                Ga naar netwerk analyse →
+              </button>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STAP 2B — Webphone
+        ═══════════════════════════════════════ -->
+        <div id="step-2b" class="wizard-step d-none">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <button class="btn btn-link btn-sm text-muted p-0 mb-3"
+                      onclick="showStep('step-1')">← Terug</button>
+              <div class="step-badge mb-3">Stap 2 van 4</div>
+              <h2 class="h5 fw-semibold mb-1">Webphone geselecteerd</h2>
+              <p class="text-muted small mb-4">
+                Een webphone draait altijd op dezelfde computer als de browser.
+                Een subnet check is niet van toepassing.
+              </p>
+              <button class="btn btn-primary w-100" onclick="goToNetworkAnalysis()">
+                Ga naar netwerk analyse →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STAP 3 — Netwerk analyse
+        ═══════════════════════════════════════ -->
+        <div id="step-3" class="wizard-step d-none">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <button class="btn btn-link btn-sm text-muted p-0 mb-3"
+                      onclick="goBackFromStep3()">← Terug</button>
+              <div class="step-badge mb-3">Stap 3 van 4</div>
+              <h2 class="h5 fw-semibold mb-1">Netwerk analyse</h2>
+              <p class="text-muted small mb-4">De automatische tests starten direct.</p>
+
+              <!-- Handmatig computer IP (verschijnt als WebRTC faalt) -->
+              <div id="manual-ip-section" class="mb-4">
+                <div class="alert alert-primary p-3">
+                  <p class="fw-semibold small mb-2">IP-adres van deze computer</p>
+                  <p class="small mb-2">Voer het volgende commando in een terminalvenster in om uw IP-adres te vinden:</p>
+                  <div id="ipconfig-cmd-windows" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace user-select-all">ipconfig</div>
+                  <div id="ipconfig-cmd-mac" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace user-select-all d-none">ipconfig getifaddr en0</div>
+                  <div class="d-flex gap-2 mb-2">
+                    <button class="btn btn-light btn-sm" onclick="selectIPConfigOS('windows')">Windows</button>
+                    <button class="btn btn-light btn-sm" onclick="selectIPConfigOS('mac')">Mac</button>
+                  </div>
+                  <p class="small mb-2">Zoek het <strong>IPv4-adres</strong> en vul het hieronder in:</p>
+                  <input type="text" class="form-control form-control-sm" id="manual-computer-ip"
+                         placeholder="bijv. 192.168.1.45"
+                         oninput="onManualComputerIP(this.value)">
+                </div>
+              </div>
+
+              <!-- Subnet check (alleen vast/DECT) -->
+              <div id="subnet-section" class="d-none mb-4">
+                <h3 class="h6 fw-semibold mb-2">Subnet check</h3>
+                <div id="subnet-result"></div>
+              </div>
+
+              <!-- Browser ping (automatisch op achtergrond) -->
+              <div class="mb-4">
+                <h3 class="h6 fw-semibold mb-2">
+                  Verbindingssnelheid
+                  <span class="text-muted fw-normal small ms-1">automatisch</span>
+                </h3>
+                <div id="ping-basic-result"></div>
+              </div>
+
+              <!-- Terminal ping (optioneel) -->
+              <div class="mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h3 class="h6 fw-semibold mb-0">
+                    Nauwkeurigere meting
+                    <span class="text-muted fw-normal small ms-1">optioneel</span>
+                  </h3>
+                  <button id="btn-toggle-terminal" class="btn btn-outline-secondary btn-sm"
+                          onclick="toggleTerminalPing()">+ Toevoegen</button>
+                </div>
+
+                <div id="terminal-ping-section" class="d-none">
+
+                  <!-- OS tabbladen -->
+                  <div class="d-flex gap-2 mb-3">
+                    <button id="tab-windows" class="btn btn-primary btn-sm"
+                            onclick="selectPingOS('windows')">Windows</button>
+                    <button id="tab-mac" class="btn btn-outline-secondary btn-sm"
+                            onclick="selectPingOS('mac')">Mac / Linux</button>
+                  </div>
+
+                  <!-- Windows instructies -->
+                  <div id="ping-os-windows">
+                    <ol class="small mb-3 ps-3">
+                      <li class="mb-1">Druk op <strong>Windows-toets + R</strong>, typ <strong>cmd</strong> en druk Enter</li>
+                      <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
+                    </ol>
+                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">ping ha.voys.nl -n 20</div>
+                    <p class="small text-muted mb-3">Wacht tot het commando klaar is. Selecteer daarna <strong>alle tekst</strong> in het venster — klik helemaal bovenaan, scroll naar beneden, houd <strong>Shift</strong> ingedrukt en klik onderaan. Druk dan op <strong>Ctrl+C</strong> en plak het resultaat hieronder.</p>
+                  </div>
+
+                  <!-- Mac / Linux instructies -->
+                  <div id="ping-os-mac" class="d-none">
+                    <ol class="small mb-3 ps-3">
+                      <li class="mb-1">Open <strong>Terminal</strong> (Spotlight: <strong>Cmd + Spatie</strong>, typ Terminal)</li>
+                      <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
+                    </ol>
+                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">ping -c 20 ha.voys.nl</div>
+                    <p class="small text-muted mb-3">Wacht tot het commando klaar is. Selecteer daarna <strong>alle tekst</strong> in het venster (<strong>Ctrl+A</strong>), kopieer het (<strong>Ctrl+C</strong>) en plak het hieronder.</p>
+                  </div>
+
+                  <textarea id="ping-paste-area" class="form-control font-monospace small mb-2"
+                            rows="6"
+                            placeholder="Plak hier de volledige ping output (inclusief de samenvattingsregel onderaan)..."></textarea>
+                  <button class="btn btn-outline-primary btn-sm w-100 mb-3"
+                          onclick="analyzePingInput()">Analyseer ping output</button>
+
+                  <div id="ping-advanced-result"></div>
+                </div>
+              </div>
+
+              <!-- Double-NAT detectie -->
+              <div class="mb-4">
+                <h3 class="h6 fw-semibold mb-2">Double-NAT detectie</h3>
+
+                <!-- Automatische CGNAT check -->
+                <div class="mb-2">
+                  <span class="text-muted small">Automatisch (CGNAT)</span>
+                  <div id="double-nat-result" class="mt-1"></div>
+                </div>
+
+                <!-- Traceroute (nauwkeuriger) -->
+                <div class="mt-3">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small">Traceroute <span class="fw-normal">(nauwkeuriger)</span></span>
+                    <button id="btn-toggle-traceroute" class="btn btn-outline-secondary btn-sm"
+                            onclick="toggleTraceroute()">+ Toevoegen</button>
+                  </div>
+
+                  <div id="traceroute-section" class="d-none">
+                    <div class="d-flex gap-2 mb-3">
+                      <button id="tab-tr-windows" class="btn btn-primary btn-sm"
+                              onclick="selectTracerouteOS('windows')">Windows</button>
+                      <button id="tab-tr-mac" class="btn btn-outline-secondary btn-sm"
+                              onclick="selectTracerouteOS('mac')">Mac / Linux</button>
+                    </div>
+
+                    <div id="tr-os-windows">
+                      <ol class="small mb-3 ps-3">
+                        <li class="mb-1">Druk op <strong>Windows-toets + R</strong>, typ <strong>cmd</strong> en druk Enter</li>
+                        <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
+                      </ol>
+                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">tracert ha.voys.nl</div>
+                      <p class="small text-muted mb-3">Wacht tot het klaar is (kan 30 seconden duren). Kopieer alle output en plak hieronder.</p>
+                    </div>
+
+                    <div id="tr-os-mac" class="d-none">
+                      <ol class="small mb-3 ps-3">
+                        <li class="mb-1">Open <strong>Terminal</strong> (Spotlight: <strong>Cmd + Spatie</strong>, typ Terminal)</li>
+                        <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
+                      </ol>
+                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">traceroute ha.voys.nl</div>
+                      <p class="small text-muted mb-3">Wacht tot het klaar is. Kopieer alle output en plak hieronder.</p>
+                    </div>
+
+                    <textarea id="traceroute-paste-area" class="form-control font-monospace small mb-2"
+                              rows="6"
+                              placeholder="Plak hier de traceroute output..."></textarea>
+                    <button class="btn btn-outline-primary btn-sm w-100 mb-3"
+                            onclick="analyzeTraceroute()">Analyseer traceroute</button>
+
+                    <div id="traceroute-result"></div>
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn btn-primary w-100" onclick="showStep('step-diagnosis'); initDiagnosis()">
+                Bekijk resultaten →
+              </button>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STAP 3B — Diagnose samenvatting
+        ═══════════════════════════════════════ -->
+        <div id="step-diagnosis" class="wizard-step d-none">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <button class="btn btn-link btn-sm text-muted p-0 mb-3"
+                      onclick="showStep('step-3')">← Terug</button>
+              <div class="step-badge mb-3">Resultaten</div>
+              <h2 class="h5 fw-semibold mb-1">Diagnose samenvatting</h2>
+              <p class="text-muted small mb-4">Op basis van de metingen</p>
+
+              <div id="diagnosis-items" class="d-flex flex-column gap-3 mb-4"></div>
+
+              <button class="btn btn-primary w-100" onclick="showStep('step-4'); initStep4()">
+                Naar rapport →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STAP 4 — Rapport
+        ═══════════════════════════════════════ -->
+        <div id="step-4" class="wizard-step d-none">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <button class="btn btn-link btn-sm text-muted p-0 mb-3"
+                      onclick="showStep('step-diagnosis')">← Terug</button>
+              <div class="step-badge mb-3">Stap 4 van 4</div>
+              <h2 class="h5 fw-semibold mb-1">Rapport</h2>
+
+              <p class="text-muted small mb-4">Kopieer het rapport en plak het in uw ticket of e-mail.</p>
+
+              <!-- Optionele console dump (alleen webphone) -->
+              <div id="console-dump-section" class="d-none mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h3 class="h6 fw-semibold mb-0">
+                    Webphone console log
+                    <span class="text-muted fw-normal small ms-1">optioneel</span>
+                  </h3>
+                  <button id="btn-toggle-console" class="btn btn-outline-secondary btn-sm"
+                          onclick="toggleConsoleDump()">+ Toevoegen</button>
+                </div>
+                <div id="console-dump-input" class="d-none">
+                  <div class="alert alert-primary p-3 mb-3">
+                    <p class="fw-semibold small mb-2">Zo haalt u de console log op:</p>
+                    <ol class="small mb-0 ps-3">
+                      <li class="mb-1">Open de webphone in de browser</li>
+                      <li class="mb-1">Druk op <strong>F12</strong> om de ontwikkelaarstools te openen</li>
+                      <li class="mb-1">Klik op het tabblad <strong>Console</strong></li>
+                      <li class="mb-1">Klik op het <strong>verbod-icoon</strong> (🚫) of het prullenbak-icoon om de console te legen</li>
+                      <li class="mb-1">Doe een <strong>testgesprek</strong> of voer de actie uit die het probleem veroorzaakt</li>
+                      <li class="mb-1">Klik met de <strong>rechtermuisknop</strong> ergens in de console en kies <strong>Save as...</strong> of <strong>Alles selecteren</strong> en kopieer met <strong>Ctrl+C</strong></li>
+                      <li>Plak het resultaat hieronder</li>
+                    </ol>
+                  </div>
+                  <textarea class="form-control font-monospace small mb-2" rows="5"
+                            id="console-dump-area"
+                            placeholder="Plak hier de console log van de webphone..."
+                            oninput="state.consoleDump = this.value.trim() || null; regenerateReport()"></textarea>
+                </div>
+              </div>
+
+              <!-- Rapport tekst -->
+              <div class="mb-3">
+                <textarea id="report-output" class="form-control font-monospace small"
+                          rows="18" readonly
+                          style="font-size: 0.78rem; resize: vertical; background: #f8f9fa;"></textarea>
+              </div>
+
+              <!-- Kopieer knop -->
+              <button class="btn btn-primary w-100" onclick="copyReport()">
+                Kopieer rapport
+              </button>
+              <div id="copy-feedback" class="text-center text-success small mt-2 d-none">
+                ✓ Gekopieerd naar klembord
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- ═══════════════════════════════════════
+       STATE — laad altijd als eerste
+  ═══════════════════════════════════════ -->
+  <script>
+  // Centrale state voor de gehele wizard. Alle functies lezen en schrijven naar dit object.
+  const state = {
+    // Stap 1
+    deviceType: null,       // 'webphone' | 'deskphone'
+
+    // Stap 2A (alleen vast/DECT)
+    brand: null,            // 'yealink' | 'gigaset' | 'snom' | 'grandstream' | 'cisco' | 'other'
+    modelType: null,        // 'Vast toestel' | 'DECT basisstation' (alleen relevant voor Yealink)
+    model: null,            // vrije tekst, ingevuld door gebruiker
+    deviceIP: null,         // ingevuld door gebruiker (bijv. '192.168.1.100')
+    computerIP: null,       // automatisch via WebRTC (null als geblokkeerd door browser)
+    subnetMatch: null,      // true | false | null (null = detectie mislukt of niet van toepassing)
+
+    // Stap 3 — netwerktests
+    pingBasic: null,        // { avg, min, max } in ms — null als CORS geblokkeerd
+    pingAdvanced: null,     // { raw: '...', avg, min, max, loss } — geplakt door gebruiker
+    latency: null,          // { avg, min, max, samples: [] } in ms
+    doubleNAT: null,        // true | false | 'unknown' (CGNAT via WebRTC)
+    traceroute: null,       // { hops: [{nr, ip, times}], doubleNAT: true|false, privateHops: [] }
+
+    // Stap 4 — rapport
+    consoleDump: null,      // optionele tekst van gebruiker (webphone console export)
+    timestamp: null         // ISO date string, gezet bij rapportgeneratie
+  }
+
+  console.log('[state] State object geladen')
+  </script>
+
+  <!-- ═══════════════════════════════════════
+       WIZARD — stap navigatie
+  ═══════════════════════════════════════ -->
+  <script>
+  function showStep(stepId) {
+    document.querySelectorAll('.wizard-step').forEach(el => el.classList.add('d-none'))
+
+    const target = document.getElementById(stepId)
+    if (!target) {
+      console.error('[wizard] Stap niet gevonden:', stepId)
+      return
+    }
+
+    target.classList.remove('d-none')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    console.log('[wizard] Stap getoond:', stepId)
+  }
+
+  function selectDeviceType(type) {
+    state.deviceType = type
+    console.log('[wizard] Apparaattype geselecteerd:', type)
+
+    if (type === 'webphone') {
+      showStep('step-2b')
+    } else {
+      showStep('step-2a')
+    }
+  }
+
+  function goToNetworkAnalysis() {
+    console.log('[wizard] Naar netwerk analyse. State:', JSON.stringify(state))
+    showStep('step-3')
+    if (typeof initStep3 === 'function') initStep3()
+  }
+
+  function goBackFromStep3() {
+    if (state.deviceType === 'webphone') {
+      showStep('step-2b')
+    } else {
+      showStep('step-2a')
+    }
+  }
+
+  console.log('[wizard] Wizard module geladen')
+  </script>
+
+  <!-- ═══════════════════════════════════════
+       DEVICES — merk/type flows en stappenplannen
+  ═══════════════════════════════════════ -->
+  <script>
+  const BRANDS = {
+    yealink: {
+      name: 'Yealink',
+      hasModelTypes: true,
+      steps: {
+        'Vast toestel': [
+          'Druk <strong>1×</strong> op de <strong>OK-knop</strong> op het toestel'
+        ],
+        'DECT basisstation': [
+          'Druk <strong>3×</strong> op de <strong>OK-knop</strong> op het basisstation'
+        ]
+      }
+    },
+    gigaset: {
+      name: 'Gigaset',
+      hasModelTypes: false,
+      defaultType: 'DECT',
+      steps: {
+        'DECT': [
+          'Optie A: Druk op de <strong>paging-knop</strong> op het basisstation — het IP-adres verschijnt op de handset',
+          'Optie B: <strong>Menu → Instellingen → Basis → Lokaal netwerk</strong> (pincode: <strong>0000</strong>)'
+        ]
+      }
+    },
+    snom: {
+      name: 'Snom',
+      hasModelTypes: false,
+      defaultType: 'Vast toestel',
+      steps: {
+        'Vast toestel': [
+          'Druk op de <strong>configuratieknop</strong> (tandwiel-icoon)',
+          'Ga naar <strong>Informatie → Systeeminformatie</strong>'
+        ]
+      }
+    },
+    grandstream: {
+      name: 'Grandstream',
+      hasModelTypes: false,
+      defaultType: 'Vast toestel',
+      steps: {
+        'Vast toestel': [
+          'Druk op <strong>Menu</strong>',
+          'Ga naar <strong>Status → Netwerkstatus → IPv4-adres</strong>'
+        ]
+      }
+    },
+    cisco: {
+      name: 'Cisco SPA',
+      hasModelTypes: false,
+      defaultType: 'Vast toestel',
+      steps: {
+        'Vast toestel': [
+          'Druk op de <strong>Menu-knop</strong> (blaadje-icoon)',
+          'Druk op toets <strong>9</strong>'
+        ]
+      }
+    },
+    other: {
+      name: 'Overig',
+      hasModelTypes: false,
+      steps: null
+    }
+  }
+
+  function onBrandChange() {
+    const brandKey = document.getElementById('brand-select').value
+
+    // Reset state
+    state.brand     = brandKey || null
+    state.modelType = null
+    state.model     = null
+    state.deviceIP  = null
+
+    // Reset alle invoervelden
+    document.getElementById('model-input').value     = ''
+    document.getElementById('device-ip-input').value = ''
+    document.getElementById('other-ip-input').value  = ''
+
+    // Verberg alle afhankelijke secties
+    _hide('model-type-group')
+    _hide('model-name-group')
+    _hide('stappenplan-container')
+    _hide('other-ip-container')
+    _hide('btn-2a-next')
+
+    if (!brandKey) return
+
+    const brand = BRANDS[brandKey]
+    console.log('[devices] Merk geselecteerd:', brand.name)
+
+    if (brandKey === 'other') {
+      _show('model-name-group')
+      _show('other-ip-container')
+      return
+    }
+
+    _show('model-name-group')
+
+    if (brand.hasModelTypes) {
+      _show('model-type-group')
+      document.getElementById('type-vast').className = 'btn btn-outline-secondary btn-sm'
+      document.getElementById('type-dect').className = 'btn btn-outline-secondary btn-sm'
+    } else {
+      state.modelType = brand.defaultType
+      _renderStappenplan(brandKey, brand.defaultType)
+      _show('stappenplan-container')
+    }
+  }
+
+  function selectModelType(type) {
+    state.modelType = type
+    console.log('[devices] Type geselecteerd:', type)
+
+    const isVast = (type === 'Vast toestel')
+    document.getElementById('type-vast').className = isVast
+      ? 'btn btn-primary btn-sm'
+      : 'btn btn-outline-secondary btn-sm'
+    document.getElementById('type-dect').className = !isVast
+      ? 'btn btn-primary btn-sm'
+      : 'btn btn-outline-secondary btn-sm'
+
+    _renderStappenplan(state.brand, type)
+    _show('stappenplan-container')
+  }
+
+  function onDeviceIPInput(value) {
+    state.deviceIP = value.trim() || null
+
+    if (state.deviceIP && state.deviceIP.length >= 7) {
+      _show('btn-2a-next')
+    } else {
+      _hide('btn-2a-next')
+    }
+  }
+
+  function _renderStappenplan(brandKey, modelType) {
+    const brand = BRANDS[brandKey]
+    const steps = brand.steps[modelType]
+
+    if (!steps) {
+      console.error('[devices] Geen stappenplan gevonden voor:', brandKey, modelType)
+      return
+    }
+
+    document.getElementById('stappenplan-steps').innerHTML =
+      steps.map(step => `<li class="mb-1">${step}</li>`).join('')
+
+    document.getElementById('device-ip-input').value = ''
+    state.deviceIP = null
+    _hide('btn-2a-next')
+
+    console.log('[devices] Stappenplan gerenderd voor:', brandKey, modelType)
+  }
+
+  function _show(id) { document.getElementById(id).classList.remove('d-none') }
+  function _hide(id) { document.getElementById(id).classList.add('d-none') }
+
+  console.log('[devices] Devices module geladen, merken:', Object.keys(BRANDS).join(', '))
+  </script>
+
+  <!-- ═══════════════════════════════════════
+       NETWORK — netwerktests
+  ═══════════════════════════════════════ -->
+  <script>
+  const STUN_SERVER  = 'stun:stun.cloudflare.com:3478'
+  const PING_SERVERS = [
+    { name: 'Voys',       url: 'https://websocket.voys.co' },
+    { name: 'OSSO',       url: 'https://www.osso.nl' },
+    { name: 'Cloudflare', url: 'https://1.1.1.1' }
+  ]
+  const PING_SAMPLES = 5
+
+  // ── Initialisatie Stap 3 ──────────────────────────────────────────────────
+
+  function initStep3() {
+    console.log('[network] Stap 3 gestart. Apparaattype:', state.deviceType)
+
+    // Subnet sectie alleen tonen voor vast/DECT
+    if (state.deviceType === 'deskphone') {
+      document.getElementById('subnet-section').classList.remove('d-none')
+      _setResult('subnet-result', 'loading', 'Subnet check loopt...')
+    }
+
+    _setResult('ping-basic-result', 'loading', 'Meting loopt...')
+    _setResult('double-nat-result', 'loading', 'Detectie loopt...')
+
+    // Start tests parallel
+    runBrowserPing()
+    runWebRTCDetection()
+  }
+
+  // ── Browser ping ─────────────────────────────────────────────────────────
+
+  async function runBrowserPing() {
+    const results = []
+
+    for (const server of PING_SERVERS) {
+      // Warmup per server
+      try {
+        await fetch(server.url + '?_w=' + Date.now(), { mode: 'no-cors' })
+      } catch (_) {}
+      await _sleep(150)
+
+      const samples = []
+      for (let i = 0; i < PING_SAMPLES; i++) {
+        try {
+          const start = performance.now()
+          await fetch(server.url + '?_=' + Date.now(), { mode: 'no-cors' })
+          const ms = Math.round(performance.now() - start)
+          samples.push(ms)
+          console.log(`[network] Browser ping ${server.name} #${i + 1}: ${ms}ms`)
+        } catch (e) {
+          console.warn(`[network] Browser ping ${server.name} #${i + 1} mislukt:`, e.message)
+        }
+        if (i < PING_SAMPLES - 1) await _sleep(300)
+      }
+
+      if (samples.length > 0) {
+        const avg = Math.round(samples.reduce((a, b) => a + b, 0) / samples.length)
+        const jitter = samples.length > 1
+          ? Math.round(Math.sqrt(samples.reduce((sum, ms) => sum + Math.pow(ms - avg, 2), 0) / samples.length))
+          : null
+        results.push({
+          name: server.name,
+          avg,
+          min:    Math.min(...samples),
+          max:    Math.max(...samples),
+          jitter
+        })
+      }
+    }
+
+    if (results.length === 0) {
+      state.pingBasic = null
+      _setResult('ping-basic-result', 'secondary', 'Niet beschikbaar — gebruik de terminal meting hieronder')
+      console.error('[network] Alle browser ping metingen mislukt')
+      return
+    }
+
+    state.pingBasic = { servers: results }
+    console.log('[network] Browser ping resultaten:', JSON.stringify(results))
+    _renderPingBasicResult()
+  }
+
+  function _renderPingBasicResult() {
+    const { servers } = state.pingBasic
+
+    const rows = servers.map(s => {
+      const latType   = s.avg    < 50 ? 'success' : s.avg    < 100 ? 'warning' : 'danger'
+      const jitType   = s.jitter < 10 ? 'success' : s.jitter <  30 ? 'warning' : 'danger'
+      const dot       = `<span class="badge bg-${latType === 'success' ? 'success' : latType === 'warning' ? 'warning' : 'danger'} rounded-circle p-1 me-2" style="width:8px;height:8px;display:inline-block;vertical-align:middle"></span>`
+      const jitCell   = s.jitter !== null
+        ? `<span class="text-${jitType === 'success' ? 'success' : jitType === 'warning' ? 'warning' : 'danger'} fw-semibold">${s.jitter} ms</span>`
+        : `<span class="text-muted">—</span>`
+      return `
+        <tr>
+          <td class="small ps-3">${dot}${s.name}</td>
+          <td class="small fw-semibold text-end">${s.avg} ms</td>
+          <td class="small text-muted text-end">${s.min}–${s.max}</td>
+          <td class="small text-end pe-3">${jitCell}</td>
+        </tr>
+      `
+    }).join('')
+
+    document.getElementById('ping-basic-result').innerHTML = `
+      <div class="result-card result-secondary p-0 overflow-hidden">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr class="table-light">
+              <th class="small fw-semibold ps-3">Server</th>
+              <th class="small fw-semibold text-end">Gemiddeld</th>
+              <th class="small fw-semibold text-end">Min–Max</th>
+              <th class="small fw-semibold text-end pe-3">Jitter</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+        <div class="px-3 pb-2 pt-1">
+          <span class="result-note">HTTP responstijd — voor nauwkeurige ms-waarden gebruik de terminal meting hieronder</span>
+        </div>
+      </div>
+    `
+  }
+
+  // ── WebRTC detectie ───────────────────────────────────────────────────────
+
+  function runWebRTCDetection() {
+    return new Promise((resolve) => {
+      const localIPs  = []
+      let externalIP  = null
+      let settled     = false
+
+      let pc
+      try {
+        pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_SERVER }] })
+      } catch (e) {
+        console.error('[network] RTCPeerConnection aanmaken mislukt:', e.message)
+        _handleWebRTCFailure()
+        return resolve()
+      }
+
+      const done = (reason) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeout)
+        try { pc.close() } catch (_) {}
+
+        // Eerste echte lokale IPv4 (geen mDNS .local naam)
+        state.computerIP = localIPs.find(ip => _isValidIPv4(ip)) || null
+
+        console.log('[network] WebRTC klaar (' + reason + '). Lokale IPs:', localIPs)
+        console.log('[network] Computer IP:', state.computerIP, '| Extern IP:', externalIP)
+
+        if (state.computerIP) {
+          document.getElementById('manual-computer-ip').value = state.computerIP
+          console.log('[network] Lokaal IP automatisch ingevuld:', state.computerIP)
+        } else {
+          console.warn('[network] Geen lokaal IP via WebRTC — handmatige invoer vereist')
+        }
+
+        if (state.deviceType === 'deskphone') _doSubnetCheck()
+        _doDoubleNATCheck(externalIP)
+
+        resolve()
+      }
+
+      const timeout = setTimeout(() => {
+        console.warn('[network] WebRTC timeout na 6s')
+        done('timeout')
+      }, 6000)
+
+      pc.onicecandidate = (event) => {
+        if (!event.candidate) { done('gathering-complete'); return }
+
+        const cand = event.candidate.candidate
+        if (!cand) return
+
+        // Formaat: "foundation component transport priority address port typ type ..."
+        const parts    = cand.split(/\s+/)
+        if (parts.length < 8) return
+        const ip       = parts[4]
+        const typeMatch = cand.match(/\btyp\s+(host|srflx|relay)\b/)
+        if (!typeMatch) return
+        const candType = typeMatch[1]
+
+        if (candType === 'host' && !localIPs.includes(ip)) {
+          localIPs.push(ip)
+          console.log('[network] ICE host kandidaat:', ip)
+        } else if (candType === 'srflx' && !externalIP) {
+          externalIP = ip
+          console.log('[network] ICE srflx (extern IP):', ip)
+        }
+      }
+
+      pc.createDataChannel('')
+      pc.createOffer()
+        .then(offer => pc.setLocalDescription(offer))
+        .catch(e => {
+          console.error('[network] WebRTC offer mislukt:', e.message)
+          done('offer-failed')
+        })
+    })
+  }
+
+  function _doSubnetCheck() {
+    if (!state.deviceIP) {
+      state.subnetMatch = null
+      _setResult('subnet-result', 'secondary', 'Geen toestel IP opgegeven')
+      return
+    }
+
+    if (!state.computerIP) {
+      state.subnetMatch = null
+      document.getElementById('subnet-result').innerHTML = `
+        <div class="result-card result-secondary">
+          <span class="result-label">Niet automatisch bepaald</span>
+          <div class="result-note">
+            Controleer handmatig: beginnen uw computer-IP en toestel-IP
+            (<strong>${state.deviceIP}</strong>) met dezelfde drie getallen?
+          </div>
+        </div>
+      `
+      return
+    }
+
+    const devicePfx   = state.deviceIP.split('.').slice(0, 3).join('.')
+    const computerPfx = state.computerIP.split('.').slice(0, 3).join('.')
+    state.subnetMatch = (devicePfx === computerPfx)
+
+    console.log('[network] Subnet check:', state.computerIP, 'vs', state.deviceIP,
+                '→', state.subnetMatch ? 'MATCH ✓' : 'GEEN MATCH ✗')
+
+    if (state.subnetMatch) {
+      document.getElementById('subnet-result').innerHTML = `
+        <div class="result-card result-success">
+          <span class="result-label">Zelfde subnet ✓</span>
+          <div class="result-note">Computer: ${state.computerIP} — Toestel: ${state.deviceIP}</div>
+        </div>
+      `
+    } else {
+      document.getElementById('subnet-result').innerHTML = `
+        <div class="result-card result-danger">
+          <span class="result-label">Ander subnet ⚠</span>
+          <div class="result-value">Computer en toestel zitten niet op hetzelfde netwerk</div>
+          <div class="result-note">Computer: ${state.computerIP} — Toestel: ${state.deviceIP}</div>
+        </div>
+      `
+    }
+  }
+
+  function _doDoubleNATCheck(externalIP) {
+    if (!externalIP) {
+      state.doubleNAT = 'unknown'
+      _setResult('double-nat-result', 'secondary', 'Kon niet worden bepaald — geen STUN-respons ontvangen')
+      return
+    }
+
+    if (_isPrivateIP(externalIP)) {
+      state.doubleNAT = true
+      console.log('[network] DOUBLE NAT gedetecteerd — extern IP is privé:', externalIP)
+      document.getElementById('double-nat-result').innerHTML = `
+        <div class="result-card result-danger">
+          <span class="result-label">Double-NAT gedetecteerd ⚠</span>
+          <div class="result-value">Uw verbinding loopt door twee routers</div>
+          <div class="result-note">Extern IP: ${externalIP} (privé-adres — wijst op dubbele NAT)</div>
+        </div>
+      `
+    } else {
+      state.doubleNAT = false
+      console.log('[network] Geen double-NAT — extern IP:', externalIP)
+      document.getElementById('double-nat-result').innerHTML = `
+        <div class="result-card result-success">
+          <span class="result-label">Geen double-NAT ✓</span>
+          <div class="result-note">Extern IP: ${externalIP}</div>
+        </div>
+      `
+    }
+  }
+
+  function _handleWebRTCFailure() {
+    state.doubleNAT  = 'unknown'
+    state.computerIP = null
+    _setResult('double-nat-result', 'secondary', 'WebRTC niet beschikbaar in deze browser of omgeving')
+    if (state.deviceType === 'deskphone') {
+      _setResult('subnet-result', 'secondary', 'Automatische subnet check niet beschikbaar')
+    }
+  }
+
+  // ── Traceroute ────────────────────────────────────────────────────────────
+
+  function toggleTraceroute() {
+    const section = document.getElementById('traceroute-section')
+    const btn     = document.getElementById('btn-toggle-traceroute')
+    if (section.classList.contains('d-none')) {
+      section.classList.remove('d-none')
+      btn.textContent = '− Verbergen'
+    } else {
+      section.classList.add('d-none')
+      btn.textContent = '+ Toevoegen'
+    }
+  }
+
+  function selectTracerouteOS(os) {
+    document.getElementById('tr-os-windows').classList.toggle('d-none', os !== 'windows')
+    document.getElementById('tr-os-mac').classList.toggle('d-none', os !== 'mac')
+    document.getElementById('tab-tr-windows').className =
+      os === 'windows' ? 'btn btn-primary btn-sm' : 'btn btn-outline-secondary btn-sm'
+    document.getElementById('tab-tr-mac').className =
+      os === 'mac' ? 'btn btn-primary btn-sm' : 'btn btn-outline-secondary btn-sm'
+  }
+
+  function analyzeTraceroute() {
+    const raw = document.getElementById('traceroute-paste-area').value.trim()
+    if (!raw) return
+
+    const result = _parseTraceroute(raw)
+
+    if (!result || result.hops.length === 0) {
+      document.getElementById('traceroute-result').innerHTML = `
+        <div class="result-card result-secondary">
+          <span class="result-label">Kon output niet verwerken</span>
+          <div class="result-note">Plak de volledige output van het traceroute commando</div>
+        </div>
+      `
+      console.warn('[network] Traceroute output niet herkenbaar')
+      return
+    }
+
+    state.traceroute = result
+    console.log('[network] Traceroute resultaat:', JSON.stringify(result))
+
+    _renderTracerouteResult()
+  }
+
+  function _parseTraceroute(text) {
+    const hops = []
+    const lines = text.split('\n')
+
+    for (const line of lines) {
+      // Windows: "  1    <1 ms    <1 ms    <1 ms  192.168.1.1"
+      // Mac/Linux: "  1  192.168.1.1 (192.168.1.1)  0.750 ms  0.586 ms  0.547 ms"
+      // Timeout:  "  3  * * *"
+
+      const winMatch = line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}([\d.]+)\s*$/)
+      const unixMatch = line.match(/^\s*(\d+)\s+([\d.]+)\s+\([\d.]+\)/)
+      const timeoutMatch = line.match(/^\s*(\d+)\s+\*\s+\*\s+\*/)
+
+      if (winMatch) {
+        hops.push({ nr: +winMatch[1], ip: winMatch[2], timeout: false })
+      } else if (unixMatch) {
+        hops.push({ nr: +unixMatch[1], ip: unixMatch[2], timeout: false })
+      } else if (timeoutMatch) {
+        hops.push({ nr: +timeoutMatch[1], ip: null, timeout: true })
+      }
+    }
+
+    if (hops.length === 0) return null
+
+    // Zoek opeenvolgende privé-hops — dat is double-NAT
+    const privateHops = hops.filter(h => h.ip && _isPrivateIP(h.ip))
+    let doubleNAT = false
+
+    // Twee of meer unieke privé-subnetten = double-NAT
+    const privateSubnets = [...new Set(privateHops.map(h => h.ip.split('.').slice(0, 3).join('.')))]
+    if (privateSubnets.length >= 2) {
+      doubleNAT = true
+      console.log('[network] Traceroute double-NAT: privé subnetten gevonden:', privateSubnets)
+    }
+
+    return { hops, doubleNAT, privateHops }
+  }
+
+  function _renderTracerouteResult() {
+    const { hops, doubleNAT, privateHops } = state.traceroute
+    const el = document.getElementById('traceroute-result')
+
+    const hopRows = hops.map(h => {
+      const ipLabel = h.timeout ? '<span class="text-muted">* timeout</span>' : h.ip
+      const badge   = h.ip && _isPrivateIP(h.ip)
+        ? ' <span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem">privé</span>'
+        : ''
+      return `<tr><td class="small text-muted pe-3">${h.nr}</td><td class="small font-monospace">${ipLabel}${badge}</td></tr>`
+    }).join('')
+
+    if (doubleNAT) {
+      el.innerHTML = `
+        <div class="result-card result-danger mb-2">
+          <span class="result-label">Double-NAT gedetecteerd ⚠</span>
+          <div class="result-value">Verbinding loopt door meerdere privé-netwerken</div>
+          <div class="result-note">Gevonden privé-subnetten: ${[...new Set(privateHops.map(h => h.ip.split('.').slice(0,3).join('.')))].map(s => s + '.x').join(' en ')}</div>
+        </div>
+        <table class="table table-sm mb-0"><tbody>${hopRows}</tbody></table>
+      `
+    } else {
+      el.innerHTML = `
+        <div class="result-card result-success mb-2">
+          <span class="result-label">Geen double-NAT ✓</span>
+          <div class="result-note">Slechts één privé-subnet zichtbaar in het pad</div>
+        </div>
+        <table class="table table-sm mb-0"><tbody>${hopRows}</tbody></table>
+      `
+    }
+  }
+
+  function onManualComputerIP(value) {
+    const ip = value.trim()
+    state.computerIP = _isValidIPv4(ip) ? ip : null
+    console.log('[network] Handmatig computer IP ingevoerd:', state.computerIP)
+    if (state.computerIP && state.deviceType === 'deskphone') _doSubnetCheck()
+  }
+
+  function selectIPConfigOS(os) {
+    document.getElementById('ipconfig-cmd-windows').classList.toggle('d-none', os !== 'windows')
+    document.getElementById('ipconfig-cmd-mac').classList.toggle('d-none', os !== 'mac')
+  }
+
+  // ── Terminal ping ─────────────────────────────────────────────────────────
+
+  function toggleTerminalPing() {
+    const section = document.getElementById('terminal-ping-section')
+    const btn     = document.getElementById('btn-toggle-terminal')
+    if (section.classList.contains('d-none')) {
+      section.classList.remove('d-none')
+      btn.textContent = '− Verbergen'
+    } else {
+      section.classList.add('d-none')
+      btn.textContent = '+ Toevoegen'
+    }
+  }
+
+  function selectPingOS(os) {
+    document.getElementById('ping-os-windows').classList.toggle('d-none', os !== 'windows')
+    document.getElementById('ping-os-mac').classList.toggle('d-none', os !== 'mac')
+    document.getElementById('tab-windows').className =
+      os === 'windows' ? 'btn btn-primary btn-sm' : 'btn btn-outline-secondary btn-sm'
+    document.getElementById('tab-mac').className =
+      os === 'mac' ? 'btn btn-primary btn-sm' : 'btn btn-outline-secondary btn-sm'
+  }
+
+  function analyzePingInput() {
+    const raw = document.getElementById('ping-paste-area').value.trim()
+    if (!raw) return
+
+    const result = _parsePingOutput(raw)
+
+    if (!result) {
+      document.getElementById('ping-advanced-result').innerHTML = `
+        <div class="result-card result-secondary">
+          <span class="result-label">Kon output niet verwerken</span>
+          <div class="result-note">Plak de volledige output van het ping commando</div>
+        </div>
+      `
+      console.warn('[network] Ping output niet herkenbaar')
+      return
+    }
+
+    state.pingAdvanced = { raw, ...result }
+    console.log('[network] Geavanceerde ping resultaat:', JSON.stringify(state.pingAdvanced))
+
+    const type  = result.avg < 50 ? 'success' : result.avg < 100 ? 'warning' : 'danger'
+    const label = result.avg < 50 ? 'Goed'    : result.avg < 100 ? 'Matig'   : 'Hoog'
+    const lossHtml   = result.loss !== null
+      ? `<div class="result-note">Pakketverlies: <strong>${result.loss}%</strong></div>`
+      : ''
+    const jitType    = result.jitter === null ? '' : result.jitter < 20 ? 'text-success' : result.jitter < 50 ? 'text-warning' : 'text-danger'
+    const jitterHtml = result.jitter !== null
+      ? `<div>Jitter: <strong class="${jitType}">${result.jitter} ms</strong></div>`
+      : ''
+
+    document.getElementById('ping-advanced-result').innerHTML = `
+      <div class="result-card result-${type}">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="result-label">${label}</span>
+            <div class="result-value">${result.avg} ms gemiddeld</div>
+          </div>
+          <div class="text-end text-muted small">
+            <div>Min: ${result.min} ms</div>
+            <div>Max: ${result.max} ms</div>
+          </div>
+        </div>
+        ${jitterHtml}
+        ${lossHtml}
+        <div class="result-note">Verwerkt uit terminal ping output</div>
+      </div>
+    `
+  }
+
+  // ── Parse ping output ─────────────────────────────────────────────────────
+
+  function _parsePingOutput(text) {
+    // Haal altijd individuele tijden op voor jitter berekening
+    const timeMatches = [...text.matchAll(/time[<=]([\d.]+)\s*ms/gi)]
+    const times       = timeMatches.map(m => Math.round(+m[1]))
+    const jitter      = _calcJitter(times)
+
+    // Windows (NL): "Minimum = 12ms, Maximum = 25ms, Gemiddeld = 18ms"
+    // Windows (EN): "Minimum = 12ms, Maximum = 25ms, Average = 18ms"
+    const winMatch = text.match(
+      /Minimum\s*=\s*(\d+)\s*ms[^,]*,\s*Maximum\s*=\s*(\d+)\s*ms[^,]*,\s*(?:Gemiddeld|Average)\s*=\s*(\d+)\s*ms/i
+    )
+    if (winMatch) {
+      return {
+        min:    +winMatch[1],
+        max:    +winMatch[2],
+        avg:    +winMatch[3],
+        loss:   _parseWindowsLoss(text),
+        jitter
+      }
+    }
+
+    // macOS: "round-trip min/avg/max/stddev = 10.5/18.2/25.1/4.3 ms"
+    // Linux: "rtt min/avg/max/mdev = 10.5/18.2/25.1/4.3 ms"
+    const unixMatch = text.match(
+      /(?:round-trip|rtt)\s+min\/avg\/max\/\S+\s*=\s*([\d.]+)\/([\d.]+)\/([\d.]+)/i
+    )
+    if (unixMatch) {
+      return {
+        min:    Math.round(+unixMatch[1]),
+        avg:    Math.round(+unixMatch[2]),
+        max:    Math.round(+unixMatch[3]),
+        loss:   _parseUnixLoss(text),
+        jitter
+      }
+    }
+
+    // Fallback: individuele reply-regels met time=Xms of time<Xms
+    if (times.length > 0) {
+      const timeoutCount = (text.match(/Request timed out|Destination host unreachable/gi) || []).length
+      const total        = times.length + timeoutCount
+      const loss         = timeoutCount > 0 ? Math.round(timeoutCount / total * 100) : null
+      return {
+        min:  Math.min(...times),
+        avg:  Math.round(times.reduce((a, b) => a + b, 0) / times.length),
+        max:  Math.max(...times),
+        loss,
+        jitter
+      }
+    }
+
+    return null
+  }
+
+  function _calcJitter(times) {
+    if (times.length < 2) return null
+    const avg = times.reduce((a, b) => a + b, 0) / times.length
+    return Math.round(Math.sqrt(times.reduce((sum, ms) => sum + Math.pow(ms - avg, 2), 0) / times.length))
+  }
+
+  function _parseWindowsLoss(text) {
+    // "Verloren = 0 (0% verlies)" of "Lost = 0 (0% loss)"
+    const m = text.match(/\((\d+)%\s*(?:verlies|loss)\)/i)
+    return m ? +m[1] : null
+  }
+
+  function _parseUnixLoss(text) {
+    // "4 packets transmitted, 4 received, 0% packet loss"
+    const m = text.match(/(\d+)%\s*packet\s*loss/i)
+    return m ? +m[1] : null
+  }
+
+  // ── Hulpfuncties ──────────────────────────────────────────────────────────
+
+  function _isPrivateIP(ip) {
+    if (!_isValidIPv4(ip)) return false
+    return /^10\./.test(ip) ||
+           /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
+           /^192\.168\./.test(ip)
+  }
+
+  function _isValidIPv4(ip) {
+    return /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)
+  }
+
+  function _sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
+  function _setResult(elementId, type, message) {
+    const el = document.getElementById(elementId)
+    if (!el) return
+    if (type === 'loading') {
+      el.innerHTML = `
+        <div class="result-card result-loading">
+          <div class="d-flex align-items-center gap-2">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"
+                 aria-hidden="true"></div>
+            <span class="text-muted small">${message}</span>
+          </div>
+        </div>
+      `
+    } else {
+      el.innerHTML = `<div class="result-card result-${type}"><span class="small">${message}</span></div>`
+    }
+  }
+
+  console.log('[network] Network module geladen. STUN:', STUN_SERVER)
+  </script>
+
+  <!-- ═══════════════════════════════════════
+       REPORT — rapportgeneratie en klembord
+  ═══════════════════════════════════════ -->
+  <script>
+  function initDiagnosis() {
+    const items  = []
+    const issues = []
+
+    // ── Latency beoordeling ──
+    const pingAvg = _bestPingAvg()
+    const pingAdv = state.pingAdvanced ? state.pingAdvanced.avg : null
+    const latency = pingAdv !== null ? pingAdv : pingAvg
+
+    if (latency !== null) {
+      if (latency < 50) {
+        items.push(_diagItem('success', 'Latency goed',
+          `Gemiddelde responstijd is ${latency} ms — uitstekend voor VoIP.`, []))
+      } else if (latency < 100) {
+        items.push(_diagItem('warning', 'Latency matig',
+          `Gemiddelde responstijd is ${latency} ms — acceptabel maar aan de hoge kant.`,
+          ['Controleer of er andere apparaten veel bandbreedte gebruiken (streaming, downloads)',
+           'Probeer de router opnieuw op te starten',
+           'Vraag uw internetprovider naar de lijnkwaliteit']))
+        issues.push('latency')
+      } else {
+        items.push(_diagItem('danger', 'Latency probleem',
+          `Gemiddelde responstijd is ${latency} ms — dit veroorzaakt waarschijnlijk haperingen of vertragingen in gesprekken.`,
+          ['Controleer of er andere apparaten veel bandbreedte gebruiken (streaming, downloads)',
+           'Sluit de computer direct aan op de router met een netwerkkabel in plaats van wifi',
+           'Start de router opnieuw op',
+           'Neem contact op met uw internetprovider — de lijnkwaliteit kan een probleem zijn']))
+        issues.push('latency')
+      }
+    }
+
+    // ── Jitter ──
+    const worstJitter = _worstJitter()
+    if (worstJitter !== null) {
+      if (worstJitter < 20) {
+        items.push(_diagItem('success', 'Jitter goed',
+          `Maximale jitter is ${worstJitter} ms — verbinding is stabiel.`, []))
+      } else if (worstJitter < 50) {
+        items.push(_diagItem('warning', 'Jitter matig',
+          `Jitter is ${worstJitter} ms — de verbinding schommelt, wat lichte haperingen kan veroorzaken.`,
+          ['Probeer een vaste netwerkkabel in plaats van wifi',
+           'Controleer of andere apparaten veel bandbreedte gebruiken']))
+        issues.push('jitter')
+      } else {
+        items.push(_diagItem('danger', 'Jitter probleem',
+          `Jitter is ${worstJitter} ms — de verbinding is onstabiel. Dit veroorzaakt hoorbare haperingen en wegvallend geluid.`,
+          ['Sluit de computer direct aan op de router met een netwerkkabel',
+           'Controleer of de router niet oververhit is',
+           'Vermijd wifi — jitter is op wifi structureel hoger']))
+        issues.push('jitter')
+      }
+    }
+
+    // ── Pakketverlies ──
+    if (state.pingAdvanced && state.pingAdvanced.loss !== null && state.pingAdvanced.loss > 0) {
+      if (state.pingAdvanced.loss <= 2) {
+        items.push(_diagItem('warning', 'Licht pakketverlies',
+          `${state.pingAdvanced.loss}% van de pakketten gaat verloren — kan lichte haperingen veroorzaken.`,
+          ['Controleer de netwerkkabel tussen computer en router',
+           'Probeer een andere wifi-frequentie (5 GHz in plaats van 2,4 GHz)']))
+        issues.push('loss')
+      } else {
+        items.push(_diagItem('danger', 'Pakketverlies',
+          `${state.pingAdvanced.loss}% van de pakketten gaat verloren — dit veroorzaakt slechte gesprekskwaliteit.`,
+          ['Sluit de computer direct aan op de router met een netwerkkabel',
+           'Controleer of de router of modem niet oververhit is',
+           'Neem contact op met uw internetprovider']))
+        issues.push('loss')
+      }
+    }
+
+    // ── Double-NAT — traceroute heeft voorrang boven WebRTC ──
+    const natResult = state.traceroute !== null ? state.traceroute.doubleNAT : state.doubleNAT
+    const natSource = state.traceroute !== null ? 'traceroute' : 'automatisch'
+
+    if (natResult === true) {
+      items.push(_diagItem('danger', 'Double-NAT gedetecteerd',
+        `Uw verbinding loopt door twee routers die elk NAT uitvoeren. Dit kan problemen geven met VoIP. <span class="text-muted">(${natSource})</span>`,
+        ['Zet de eerste router in bridge-modus zodat alleen de tweede router NAT uitvoert',
+         'Vraag uw internetprovider of het modem/de ONT in bridge-modus kan worden gezet',
+         'Neem contact op met Voys support — zij kunnen helpen de juiste instelling te bepalen']))
+      issues.push('doublenat')
+    } else if (natResult === false) {
+      items.push(_diagItem('success', 'Geen double-NAT', `Uw verbinding loopt via één router. <span class="text-muted">(${natSource})</span>`, []))
+    }
+
+    // ── Subnet (alleen deskphone) ──
+    if (state.deviceType === 'deskphone') {
+      if (state.subnetMatch === true) {
+        items.push(_diagItem('success', 'Subnet correct',
+          'Computer en toestel zitten op hetzelfde netwerk.', []))
+      } else if (state.subnetMatch === false) {
+        items.push(_diagItem('danger', 'Subnet probleem',
+          'Computer en toestel zitten niet op hetzelfde netwerk. Het toestel kan de telefooncentrale mogelijk niet bereiken.',
+          ['Controleer of het toestel op hetzelfde netwerk is aangesloten als de computer',
+           'Controleer of het toestel niet per ongeluk op een gastnetwerk zit',
+           'Controleer de netwerkinstellingen van het toestel']))
+        issues.push('subnet')
+      }
+    }
+
+    // ── Alles goed ──
+    if (issues.length === 0 && items.length > 0) {
+      items.unshift(_diagItem('success', 'Alle tests geslaagd',
+        'Geen netwerpproblemen gevonden. Als u toch problemen ervaart, kan het aan de Voys-configuratie of het toestel zelf liggen.', []))
+    }
+
+    document.getElementById('diagnosis-items').innerHTML = items.join('')
+    console.log('[report] Diagnose klaar. Problemen:', issues.length === 0 ? 'geen' : issues.join(', '))
+  }
+
+  function _bestPingAvg() {
+    if (!state.pingBasic || !state.pingBasic.servers) return null
+    return Math.min(...state.pingBasic.servers.map(s => s.avg))
+  }
+
+  function _worstJitter() {
+    // Terminal ping heeft voorrang — nauwkeuriger dan browser HTTP meting
+    if (state.pingAdvanced && state.pingAdvanced.jitter !== null && state.pingAdvanced.jitter !== undefined) {
+      return state.pingAdvanced.jitter
+    }
+    if (!state.pingBasic || !state.pingBasic.servers) return null
+    const jitters = state.pingBasic.servers.map(s => s.jitter).filter(j => j !== null)
+    return jitters.length > 0 ? Math.max(...jitters) : null
+  }
+
+  function _diagItem(type, title, description, tips) {
+    const icons = { success: '✓', warning: '⚠', danger: '✕' }
+    const colors = {
+      success: 'result-success',
+      warning: 'result-warning',
+      danger:  'result-danger'
+    }
+    const tipsHtml = tips.length > 0
+      ? `<ul class="mb-0 mt-2 ps-3 small">${tips.map(t => `<li class="mb-1">${t}</li>`).join('')}</ul>`
+      : ''
+    return `
+      <div class="result-card ${colors[type]}">
+        <div class="fw-semibold small mb-1">${icons[type]} ${title}</div>
+        <div class="small">${description}</div>
+        ${tipsHtml}
+      </div>
+    `
+  }
+
+  function initStep4() {
+    state.timestamp = new Date().toISOString()
+
+    // Console dump sectie alleen tonen voor webphone
+    if (state.deviceType === 'webphone') {
+      document.getElementById('console-dump-section').classList.remove('d-none')
+    }
+
+    regenerateReport()
+    console.log('[report] Rapport gegenereerd, tijdstip:', state.timestamp)
+  }
+
+  function regenerateReport() {
+    const text = buildReport()
+    document.getElementById('report-output').value = text
+  }
+
+  function buildReport() {
+    const ts = state.timestamp
+      ? new Date(state.timestamp).toLocaleString('nl-NL')
+      : new Date().toLocaleString('nl-NL')
+
+    const lines = []
+    const line  = (label, value) => lines.push(`${label}: ${value}`)
+    const sep   = () => lines.push('─'.repeat(40))
+    const title = (t) => lines.push(t)
+
+    title('VOYS VOIP DIAGNOSERAPPORT')
+    title('Gegenereerd op ' + ts)
+    sep()
+
+    // ── Apparaat ──
+    title('APPARAAT')
+    const deviceLabel = state.deviceType === 'webphone' ? 'Webphone' : 'Vast / DECT toestel'
+    line('Type', deviceLabel)
+
+    if (state.deviceType === 'deskphone') {
+      if (state.brand) {
+        const brandNames = {
+          yealink: 'Yealink', gigaset: 'Gigaset', snom: 'Snom',
+          grandstream: 'Grandstream', cisco: 'Cisco SPA', other: 'Overig'
+        }
+        line('Merk', brandNames[state.brand] || state.brand)
+      }
+      if (state.modelType) line('Type toestel', state.modelType)
+      if (state.model)     line('Model', state.model)
+      if (state.deviceIP)  line('IP toestel', state.deviceIP)
+    }
+
+    if (state.computerIP) {
+      line('IP computer', state.computerIP)
+    } else {
+      line('IP computer', 'Niet automatisch bepaald')
+    }
+
+    sep()
+
+    // ── Subnet check ──
+    if (state.deviceType === 'deskphone') {
+      title('SUBNET CHECK')
+      if (state.subnetMatch === true) {
+        line('Resultaat', 'Zelfde subnet ✓')
+      } else if (state.subnetMatch === false) {
+        line('Resultaat', 'Ander subnet — computer en toestel zitten niet op hetzelfde netwerk ⚠')
+      } else {
+        line('Resultaat', 'Niet automatisch bepaald')
+        if (state.deviceIP) line('Toestel IP', state.deviceIP)
+      }
+      sep()
+    }
+
+    // ── Browser ping ──
+    title('VERBINDINGSSNELHEID (browser meting)')
+    if (state.pingBasic && state.pingBasic.servers) {
+      state.pingBasic.servers.forEach(s => {
+        const jitStr = s.jitter !== null ? `, jitter ${s.jitter} ms` : ''
+        line(s.name, `${s.avg} ms gemiddeld (min ${s.min} – max ${s.max} ms${jitStr})`)
+      })
+    } else {
+      lines.push('Niet beschikbaar')
+    }
+    sep()
+
+    // ── Terminal ping ──
+    title('PING NAAR HA.VOYS.NL (terminal meting)')
+    if (state.pingAdvanced) {
+      line('Gemiddeld', state.pingAdvanced.avg + ' ms')
+      line('Minimum',   state.pingAdvanced.min + ' ms')
+      line('Maximum',   state.pingAdvanced.max + ' ms')
+      if (state.pingAdvanced.loss !== null) {
+        line('Pakketverlies', state.pingAdvanced.loss + '%')
+      }
+    } else {
+      lines.push('Niet uitgevoerd')
+    }
+    sep()
+
+    // ── Double-NAT ──
+    title('DOUBLE-NAT DETECTIE')
+    if (state.traceroute) {
+      line('Methode', 'Traceroute')
+      line('Resultaat', state.traceroute.doubleNAT
+        ? 'Double-NAT gedetecteerd — meerdere privé-subnetten in pad ⚠'
+        : 'Geen double-NAT ✓')
+      if (state.traceroute.hops.length > 0) {
+        const hopLines = state.traceroute.hops
+          .map(h => `  Hop ${h.nr}: ${h.timeout ? '*' : h.ip}`)
+          .join('\n')
+        lines.push('Hops:\n' + hopLines)
+      }
+    } else {
+      line('Methode', 'Automatisch (CGNAT via WebRTC)')
+      if (state.doubleNAT === true) {
+        line('Resultaat', 'CGNAT gedetecteerd ⚠')
+      } else if (state.doubleNAT === false) {
+        line('Resultaat', 'Geen CGNAT ✓')
+      } else {
+        line('Resultaat', 'Niet bepaald')
+      }
+    }
+    sep()
+
+    // ── Console dump ──
+    if (state.consoleDump) {
+      title('WEBPHONE CONSOLE LOG')
+      lines.push(state.consoleDump)
+      sep()
+    }
+
+    // ── Diagnose-info ──
+    title('DIAGNOSE-INFO (ruwe waarden voor support)')
+    line('Browser ping servers', state.pingBasic
+      ? state.pingBasic.servers.map(s => `${s.name}: ${s.avg}ms`).join(', ')
+      : 'geen')
+    line('WebRTC computer IP', state.computerIP || 'geen')
+    line('Double-NAT raw', state.traceroute
+      ? `traceroute: ${state.traceroute.doubleNAT}`
+      : `WebRTC: ${state.doubleNAT}`)
+    if (state.pingAdvanced) {
+      const jitStr = state.pingAdvanced.jitter !== null ? ` jitter=${state.pingAdvanced.jitter}ms` : ''
+      line('Terminal ping raw', `avg=${state.pingAdvanced.avg} min=${state.pingAdvanced.min} max=${state.pingAdvanced.max} loss=${state.pingAdvanced.loss}%${jitStr}`)
+    }
+
+    return lines.join('\n')
+  }
+
+  function toggleConsoleDump() {
+    const input = document.getElementById('console-dump-input')
+    const btn   = document.getElementById('btn-toggle-console')
+    if (input.classList.contains('d-none')) {
+      input.classList.remove('d-none')
+      btn.textContent = '− Verbergen'
+    } else {
+      input.classList.add('d-none')
+      btn.textContent = '+ Toevoegen'
+    }
+  }
+
+  async function copyReport() {
+    const text = document.getElementById('report-output').value
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch (_) {
+      // Fallback voor browsers zonder clipboard API
+      const ta = document.getElementById('report-output')
+      ta.select()
+      document.execCommand('copy')
+    }
+    console.log('[report] Rapport gekopieerd naar klembord')
+    const fb = document.getElementById('copy-feedback')
+    fb.classList.remove('d-none')
+    setTimeout(() => fb.classList.add('d-none'), 3000)
+  }
+
+  console.log('[report] Report module geladen')
+  </script>
+
+</body>
+</html>
