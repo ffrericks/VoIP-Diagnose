@@ -1698,9 +1698,14 @@
         ? 'Double-NAT gedetecteerd — meerdere privé-subnetten in pad ⚠'
         : 'Geen double-NAT ✓')
       if (state.traceroute.hops.length > 0) {
-        const hopLines = state.traceroute.hops
-          .map(h => `  Hop ${h.nr}: ${h.timeout ? '*' : h.ip}`)
-          .join('\n')
+        const hopLines = state.traceroute.hops.map(h => {
+          if (h.timeout) return `  Hop ${h.nr}: *`
+          const isPrivate = _isPrivateIP(h.ip)
+          const isISP     = isPrivate && h.hostname && _isISPHostname(h.hostname)
+          const tag       = isISP ? ' [ISP]' : isPrivate ? ' [privé]' : ''
+          const host      = h.hostname ? ` (${h.hostname})` : ''
+          return `  Hop ${h.nr}: ${h.ip}${host}${tag}`
+        }).join('\n')
         lines.push('Hops:\n' + hopLines)
       }
     } else {
