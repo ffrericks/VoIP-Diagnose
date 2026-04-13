@@ -1149,45 +1149,67 @@
     const lines = text.split('\n')
 
     for (const line of lines) {
-      // Windows: "  1    <1 ms    <1 ms    <1 ms  192.168.1.1"
-      // Mac/Linux: "  1  192.168.1.1 (192.168.1.1)  0.750 ms  0.586 ms  0.547 ms"
-      // Timeout:  "  3  * * *"
+      let nr, ip, hostname
 
-      // Windows: "  1  <1 ms  <1 ms  <1 ms  router [10.13.0.1]" of "  1  <1 ms  10.13.0.1"
       // Windows met hostnaam: "  1  <1 ms  <1 ms  <1 ms  router [10.13.0.1]"
-      // Windows zonder hostnaam: "  1  <1 ms  <1 ms  <1 ms  10.13.0.1"
-      const winMatch = line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}.*\[([\d.]+)\]\s*$/) ||
-                       line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}([\d.]+)\s*$/)
-      // Mac/Linux met haakjes: "  1  192.168.1.1 (192.168.1.1)  0.725 ms"
-      // Mac/Linux zonder haakjes: "  1  192.168.1.1  0.725ms  0.557ms"
-      const unixMatch = line.match(/^\s*(\d+)\s+([\d.]+)\s+\([\d.]+\)/) ||
-                        line.match(/^\s*(\d+)\s+([\d.]+)\s+[\d.]+ms/)
-      // Timeout: 1, 2 of 3 sterretjes
-      const timeoutMatch = line.match(/^\s*(\d+)\s+\*[\s*]+$/)
+      const winHost = line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}(\S+)\s+\[([\d.]+)\]\s*$/)
+      if (winHost) { nr = +winHost[1]; hostname = winHost[2]; ip = winHost[3] }
 
-      if (winMatch) {
-        hops.push({ nr: +winMatch[1], ip: winMatch[2], timeout: false })
-      } else if (unixMatch) {
-        hops.push({ nr: +unixMatch[1], ip: unixMatch[2], timeout: false })
-      } else if (timeoutMatch) {
-        hops.push({ nr: +timeoutMatch[1], ip: null, timeout: true })
+      // Windows zonder hostnaam: "  1  <1 ms  <1 ms  <1 ms  10.13.0.1"
+      if (!nr) {
+        const winIP = line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}([\d.]+)\s*$/)
+        if (winIP) { nr = +winIP[1]; ip = winIP[2] }
+      }
+
+      // Mac/Linux met haakjes: "  1  192.168.1.1 (192.168.1.1)  0.725 ms"
+      if (!nr) {
+        const unixHost = line.match(/^\s*(\d+)\s+(\S+)\s+\(([\d.]+)\)/)
+        if (unixHost) { nr = +unixHost[1]; hostname = unixHost[2]; ip = unixHost[3] }
+      }
+
+      // Mac/Linux zonder haakjes: "  1  192.168.1.1  0.725ms"
+      if (!nr) {
+        const unixIP = line.match(/^\s*(\d+)\s+([\d.]+)\s+[\d.]+ms/)
+        if (unixIP) { nr = +unixIP[1]; ip = unixIP[2] }
+      }
+
+      // Timeout: 1, 2 of 3 sterretjes
+      if (!nr) {
+        const timeout = line.match(/^\s*(\d+)\s+\*[\s*]+$/)
+        if (timeout) { nr = +timeout[1] }
+      }
+
+      if (nr) {
+        hops.push({ nr, ip: ip || null, hostname: hostname || null, timeout: !ip })
       }
     }
 
     if (hops.length === 0) return null
 
-    // Zoek opeenvolgende privé-hops — dat is double-NAT
-    const privateHops = hops.filter(h => h.ip && _isPrivateIP(h.ip))
-    let doubleNAT = false
+    // Double-NAT detectie:
+    // Alleen de eerste 2 hops met een IP meenemen — daarna zijn privé-adressen ISP-infrastructuur.
+    // Hops met een ISP-hostnaam (bevat een punt, bijv. d915c338.osso.nl) worden genegeerd.
+    const candidateHops = hops
+      .filter(h => h.ip && _isPrivateIP(h.ip))
+      .filter(h => !h.hostname || !_isISPHostname(h.hostname))
+      .slice(0, 2)  // maximaal de eerste 2 privé-klant-hops
 
-    // Twee of meer unieke privé-subnetten = double-NAT
-    const privateSubnets = [...new Set(privateHops.map(h => h.ip.split('.').slice(0, 3).join('.')))]
-    if (privateSubnets.length >= 2) {
-      doubleNAT = true
-      console.log('[network] Traceroute double-NAT: privé subnetten gevonden:', privateSubnets)
+    const privateSubnets = [...new Set(candidateHops.map(h => h.ip.split('.').slice(0, 3).join('.')))]
+    const doubleNAT      = privateSubnets.length >= 2
+
+    if (doubleNAT) {
+      console.log('[network] Traceroute double-NAT gedetecteerd. Subnetten:', privateSubnets)
+    } else {
+      console.log('[network] Geen double-NAT. Kandidaat privé-hops:', candidateHops.map(h => h.ip))
     }
 
-    return { hops, doubleNAT, privateHops }
+    return { hops, doubleNAT, privateHops: candidateHops }
+  }
+
+  function _isISPHostname(hostname) {
+    // Hostnaam met meerdere onderdelen (bijv. d915c338.osso.nl) = ISP infra, geen klantrouter
+    // Simpele namen als 'router' of 'gateway' = klantapparaat
+    return hostname.includes('.') && hostname.split('.').length >= 2
   }
 
   function _renderTracerouteResult() {
@@ -1195,11 +1217,16 @@
     const el = document.getElementById('traceroute-result')
 
     const hopRows = hops.map(h => {
-      const ipLabel = h.timeout ? '<span class="text-muted">* timeout</span>' : h.ip
-      const badge   = h.ip && _isPrivateIP(h.ip)
-        ? ' <span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem">privé</span>'
+      const ipLabel    = h.timeout ? '<span class="text-muted">* timeout</span>' : h.ip
+      const hostLabel  = h.hostname && !h.timeout ? `<span class="text-muted ms-2" style="font-size:0.75rem">${h.hostname}</span>` : ''
+      const isPrivate  = h.ip && _isPrivateIP(h.ip)
+      const isISP      = isPrivate && h.hostname && _isISPHostname(h.hostname)
+      const badge      = isPrivate
+        ? isISP
+          ? ' <span class="badge bg-secondary ms-1" style="font-size:0.65rem">ISP</span>'
+          : ' <span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem">privé</span>'
         : ''
-      return `<tr><td class="small text-muted pe-3">${h.nr}</td><td class="small font-monospace">${ipLabel}${badge}</td></tr>`
+      return `<tr><td class="small text-muted pe-3">${h.nr}</td><td class="small font-monospace">${ipLabel}${badge}${hostLabel}</td></tr>`
     }).join('')
 
     if (doubleNAT) {
