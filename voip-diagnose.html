@@ -306,11 +306,40 @@
               <button class="btn btn-link btn-sm text-muted p-0 mb-3"
                       onclick="showStep('step-1')">← Terug</button>
               <div class="step-badge mb-3">Stap 2 van 4</div>
-              <h2 class="h5 fw-semibold mb-1">Webphone geselecteerd</h2>
-              <p class="text-muted small mb-4">
-                Een webphone draait altijd op dezelfde computer als de browser.
-                Een subnet check is niet van toepassing.
-              </p>
+              <h2 class="h5 fw-semibold mb-1">Webphone</h2>
+              <p class="text-muted small mb-4">Voeg optioneel de console log toe voor een uitgebreidere analyse van uw gesprekken.</p>
+
+              <!-- Console log -->
+              <div class="mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h3 class="h6 fw-semibold mb-0">
+                    Console log
+                    <span class="text-muted fw-normal small ms-1">optioneel</span>
+                  </h3>
+                  <button id="btn-toggle-console" class="btn btn-outline-secondary btn-sm"
+                          onclick="toggleConsoleDump()">+ Toevoegen</button>
+                </div>
+                <div id="console-dump-input" class="d-none">
+                  <div class="alert alert-primary p-3 mb-3">
+                    <p class="fw-semibold small mb-2">Zo haalt u de console log op:</p>
+                    <ol class="small mb-0 ps-3">
+                      <li class="mb-1">Open de webphone in de browser</li>
+                      <li class="mb-1">Druk op <strong>F12</strong> om de ontwikkelaarstools te openen</li>
+                      <li class="mb-1">Klik op het tabblad <strong>Console</strong></li>
+                      <li class="mb-1">Klik op het <strong>verbod-icoon</strong> (🚫) of het prullenbak-icoon om de console te legen</li>
+                      <li class="mb-1">Doe een <strong>testgesprek</strong> of voer de actie uit die het probleem veroorzaakt</li>
+                      <li class="mb-1">Klik met de <strong>rechtermuisknop</strong> ergens in de console en kies <strong>Save as...</strong> of <strong>Alles selecteren</strong> en kopieer met <strong>Ctrl+C</strong></li>
+                      <li>Plak het resultaat hieronder</li>
+                    </ol>
+                  </div>
+                  <textarea class="form-control font-monospace small mb-2" rows="5"
+                            id="console-dump-area"
+                            placeholder="Plak hier de console log van de webphone..."
+                            oninput="state.consoleDump = this.value.trim() || null; _parseAndRenderCalls(); regenerateReport()"></textarea>
+                  <div id="console-calls-summary"></div>
+                </div>
+              </div>
+
               <button class="btn btn-primary w-100" onclick="goToNetworkAnalysis()">
                 Ga naar netwerk analyse →
               </button>
@@ -510,37 +539,6 @@
               <h2 class="h5 fw-semibold mb-1">Rapport</h2>
 
               <p class="text-muted small mb-4">Kopieer het rapport en plak het in uw ticket of e-mail.</p>
-
-              <!-- Optionele console dump (alleen webphone) -->
-              <div id="console-dump-section" class="d-none mb-4">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                  <h3 class="h6 fw-semibold mb-0">
-                    Webphone console log
-                    <span class="text-muted fw-normal small ms-1">optioneel</span>
-                  </h3>
-                  <button id="btn-toggle-console" class="btn btn-outline-secondary btn-sm"
-                          onclick="toggleConsoleDump()">+ Toevoegen</button>
-                </div>
-                <div id="console-dump-input" class="d-none">
-                  <div class="alert alert-primary p-3 mb-3">
-                    <p class="fw-semibold small mb-2">Zo haalt u de console log op:</p>
-                    <ol class="small mb-0 ps-3">
-                      <li class="mb-1">Open de webphone in de browser</li>
-                      <li class="mb-1">Druk op <strong>F12</strong> om de ontwikkelaarstools te openen</li>
-                      <li class="mb-1">Klik op het tabblad <strong>Console</strong></li>
-                      <li class="mb-1">Klik op het <strong>verbod-icoon</strong> (🚫) of het prullenbak-icoon om de console te legen</li>
-                      <li class="mb-1">Doe een <strong>testgesprek</strong> of voer de actie uit die het probleem veroorzaakt</li>
-                      <li class="mb-1">Klik met de <strong>rechtermuisknop</strong> ergens in de console en kies <strong>Save as...</strong> of <strong>Alles selecteren</strong> en kopieer met <strong>Ctrl+C</strong></li>
-                      <li>Plak het resultaat hieronder</li>
-                    </ol>
-                  </div>
-                  <textarea class="form-control font-monospace small mb-2" rows="5"
-                            id="console-dump-area"
-                            placeholder="Plak hier de console log van de webphone..."
-                            oninput="state.consoleDump = this.value.trim() || null; _parseAndRenderCalls(); regenerateReport()"></textarea>
-                  <div id="console-calls-summary"></div>
-                </div>
-              </div>
 
               <!-- Rapport tekst -->
               <div class="mb-3">
@@ -827,10 +825,12 @@
   function initStep3() {
     console.log('[network] Stap 3 gestart. Apparaattype:', state.deviceType)
 
-    // Subnet sectie alleen tonen voor vast/DECT
+    // Subnet sectie en IP-invoer alleen tonen voor vast/DECT
     if (state.deviceType === 'deskphone') {
       document.getElementById('subnet-section').classList.remove('d-none')
       _setResult('subnet-result', 'loading', 'Subnet check loopt...')
+    } else {
+      _hide('manual-ip-section')
     }
 
     _setResult('ping-basic-result', 'loading', 'Meting loopt...')
@@ -1536,18 +1536,52 @@
       items.push(_diagItem('success', 'Geen double-NAT', `Uw verbinding loopt via één router. <span class="text-muted">(${natSource})</span>`, []))
     }
 
+    // ── MOS (uit console log) ──
+    if (state.parsedCalls && state.parsedCalls.length > 0) {
+      const withMOS = state.parsedCalls.filter(c => c.mosAvg !== undefined)
+      if (withMOS.length > 0) {
+        const avgMOS = withMOS.reduce((s, c) => s + c.mosAvg, 0) / withMOS.length
+        const count  = withMOS.length
+        const label  = `${avgMOS.toFixed(2)} gemiddeld over ${count} gesprek${count !== 1 ? 'ken' : ''}`
+        if (avgMOS >= 4.0) {
+          items.push(_diagItem('success', 'Gespreksklariteit goed',
+            `MOS ${label} — uitstekende audiokwaliteit.`, []))
+        } else if (avgMOS >= 3.6) {
+          items.push(_diagItem('warning', 'Gespreksklariteit matig',
+            `MOS ${label} — merkbaar voor de beller.`,
+            ['Controleer latency en jitter — die zijn de meest voorkomende oorzaken van een lage MOS']))
+          issues.push('mos')
+        } else {
+          items.push(_diagItem('danger', 'Slechte gespreksklariteit',
+            `MOS ${label} — duidelijk hoorbare kwaliteitsproblemen.`,
+            ['Controleer latency en jitter', 'Controleer of er pakketverlies is',
+             'Neem contact op met Voys support']))
+          issues.push('mos')
+        }
+      }
+    }
+
     // ── Subnet (alleen deskphone) ──
     if (state.deviceType === 'deskphone') {
       if (state.subnetMatch === true) {
         items.push(_diagItem('success', 'Subnet correct',
           'Computer en toestel zitten op hetzelfde netwerk.', []))
       } else if (state.subnetMatch === false) {
-        items.push(_diagItem('danger', 'Subnet probleem',
-          'Computer en toestel zitten niet op hetzelfde netwerk. Het toestel kan de telefooncentrale mogelijk niet bereiken.',
-          ['Controleer of het toestel op hetzelfde netwerk is aangesloten als de computer',
-           'Controleer of het toestel niet per ongeluk op een gastnetwerk zit',
-           'Controleer de netwerkinstellingen van het toestel']))
-        issues.push('subnet')
+        if (natResult === true && _deviceOnSecondHopSubnet()) {
+          items.push(_diagItem('warning', 'Subnet afwijkend — mogelijk geen double-NAT op toestel',
+            `Computer en toestel zitten niet op hetzelfde netwerk. Het toestel-IP (${state.deviceIP}) lijkt overeen te komen met het subnet van de tweede router in de traceroute — het toestel zit waarschijnlijk op een apart netwerksegment achter de tweede router.`,
+            ['Controleer of het toestel bewust op een apart segment zit',
+             'Controleer of de tweede router in bridge-modus kan worden gezet',
+             'Neem contact op met Voys support voor advies over de netwerkinrichting']))
+          issues.push('subnet')
+        } else {
+          items.push(_diagItem('danger', 'Subnet probleem',
+            'Computer en toestel zitten niet op hetzelfde netwerk. Het toestel kan de telefooncentrale mogelijk niet bereiken.',
+            ['Controleer of het toestel op hetzelfde netwerk is aangesloten als de computer',
+             'Controleer of het toestel niet per ongeluk op een gastnetwerk zit',
+             'Controleer de netwerkinstellingen van het toestel']))
+          issues.push('subnet')
+        }
       }
     }
 
@@ -1576,6 +1610,15 @@
     return jitters.length > 0 ? Math.max(...jitters) : null
   }
 
+  function _deviceOnSecondHopSubnet() {
+    if (!state.deviceIP || !state.traceroute) return false
+    const { privateHops } = state.traceroute
+    if (!privateHops || privateHops.length < 2) return false
+    const secondSubnet = privateHops[1].ip.split('.').slice(0, 3).join('.')
+    const deviceSubnet = state.deviceIP.split('.').slice(0, 3).join('.')
+    return secondSubnet === deviceSubnet
+  }
+
   function _diagItem(type, title, description, tips) {
     const icons = { success: '✓', warning: '⚠', danger: '✕' }
     const colors = {
@@ -1597,12 +1640,6 @@
 
   function initStep4() {
     state.timestamp = new Date().toISOString()
-
-    // Console dump sectie alleen tonen voor webphone
-    if (state.deviceType === 'webphone') {
-      document.getElementById('console-dump-section').classList.remove('d-none')
-    }
-
     regenerateReport()
     console.log('[report] Rapport gegenereerd, tijdstip:', state.timestamp)
   }

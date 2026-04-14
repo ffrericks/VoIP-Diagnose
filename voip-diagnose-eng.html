@@ -306,11 +306,40 @@
               <button class="btn btn-link btn-sm text-muted p-0 mb-3"
                       onclick="showStep('step-1')">← Back</button>
               <div class="step-badge mb-3">Step 2 of 4</div>
-              <h2 class="h5 fw-semibold mb-1">Webphone selected</h2>
-              <p class="text-muted small mb-4">
-                A webphone always runs on the same computer as the browser.
-                A subnet check is not applicable.
-              </p>
+              <h2 class="h5 fw-semibold mb-1">Webphone</h2>
+              <p class="text-muted small mb-4">Optionally add a console log for a more detailed analysis of your calls.</p>
+
+              <!-- Console log -->
+              <div class="mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h3 class="h6 fw-semibold mb-0">
+                    Console log
+                    <span class="text-muted fw-normal small ms-1">optional</span>
+                  </h3>
+                  <button id="btn-toggle-console" class="btn btn-outline-secondary btn-sm"
+                          onclick="toggleConsoleDump()">+ Add</button>
+                </div>
+                <div id="console-dump-input" class="d-none">
+                  <div class="alert alert-primary p-3 mb-3">
+                    <p class="fw-semibold small mb-2">How to get the console log:</p>
+                    <ol class="small mb-0 ps-3">
+                      <li class="mb-1">Open the webphone in the browser</li>
+                      <li class="mb-1">Press <strong>F12</strong> to open the developer tools</li>
+                      <li class="mb-1">Click on the <strong>Console</strong> tab</li>
+                      <li class="mb-1">Click the <strong>clear icon</strong> (🚫) or trash icon to clear the console</li>
+                      <li class="mb-1">Make a <strong>test call</strong> or perform the action that causes the issue</li>
+                      <li class="mb-1"><strong>Right-click</strong> anywhere in the console and choose <strong>Save as...</strong> or <strong>Select all</strong> and copy with <strong>Ctrl+C</strong></li>
+                      <li>Paste the result below</li>
+                    </ol>
+                  </div>
+                  <textarea class="form-control font-monospace small mb-2" rows="5"
+                            id="console-dump-area"
+                            placeholder="Paste the webphone console log here..."
+                            oninput="state.consoleDump = this.value.trim() || null; _parseAndRenderCalls(); regenerateReport()"></textarea>
+                  <div id="console-calls-summary"></div>
+                </div>
+              </div>
+
               <button class="btn btn-primary w-100" onclick="goToNetworkAnalysis()">
                 Go to network analysis →
               </button>
@@ -510,37 +539,6 @@
               <h2 class="h5 fw-semibold mb-1">Report</h2>
 
               <p class="text-muted small mb-4">Copy the report and paste it into your ticket or email.</p>
-
-              <!-- Optional console dump (webphone only) -->
-              <div id="console-dump-section" class="d-none mb-4">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                  <h3 class="h6 fw-semibold mb-0">
-                    Webphone console log
-                    <span class="text-muted fw-normal small ms-1">optional</span>
-                  </h3>
-                  <button id="btn-toggle-console" class="btn btn-outline-secondary btn-sm"
-                          onclick="toggleConsoleDump()">+ Add</button>
-                </div>
-                <div id="console-dump-input" class="d-none">
-                  <div class="alert alert-primary p-3 mb-3">
-                    <p class="fw-semibold small mb-2">How to get the console log:</p>
-                    <ol class="small mb-0 ps-3">
-                      <li class="mb-1">Open the webphone in the browser</li>
-                      <li class="mb-1">Press <strong>F12</strong> to open the developer tools</li>
-                      <li class="mb-1">Click on the <strong>Console</strong> tab</li>
-                      <li class="mb-1">Click the <strong>clear icon</strong> (🚫) or trash icon to clear the console</li>
-                      <li class="mb-1">Make a <strong>test call</strong> or perform the action that causes the issue</li>
-                      <li class="mb-1"><strong>Right-click</strong> anywhere in the console and choose <strong>Save as...</strong> or <strong>Select all</strong> and copy with <strong>Ctrl+C</strong></li>
-                      <li>Paste the result below</li>
-                    </ol>
-                  </div>
-                  <textarea class="form-control font-monospace small mb-2" rows="5"
-                            id="console-dump-area"
-                            placeholder="Paste the webphone console log here..."
-                            oninput="state.consoleDump = this.value.trim() || null; _parseAndRenderCalls(); regenerateReport()"></textarea>
-                  <div id="console-calls-summary"></div>
-                </div>
-              </div>
 
               <!-- Report text -->
               <div class="mb-3">
@@ -827,10 +825,12 @@
   function initStep3() {
     console.log('[network] Step 3 started. Device type:', state.deviceType)
 
-    // Subnet section only for desk phone / DECT
+    // Subnet section and IP input only for desk phone / DECT
     if (state.deviceType === 'deskphone') {
       document.getElementById('subnet-section').classList.remove('d-none')
       _setResult('subnet-result', 'loading', 'Running subnet check...')
+    } else {
+      _hide('manual-ip-section')
     }
 
     _setResult('ping-basic-result', 'loading', 'Measuring...')
@@ -1536,18 +1536,52 @@
       items.push(_diagItem('success', 'No double-NAT', `Your connection goes through a single router. <span class="text-muted">(${natSource})</span>`, []))
     }
 
+    // ── MOS (from console log) ──
+    if (state.parsedCalls && state.parsedCalls.length > 0) {
+      const withMOS = state.parsedCalls.filter(c => c.mosAvg !== undefined)
+      if (withMOS.length > 0) {
+        const avgMOS = withMOS.reduce((s, c) => s + c.mosAvg, 0) / withMOS.length
+        const count  = withMOS.length
+        const label  = `${avgMOS.toFixed(2)} average across ${count} call${count !== 1 ? 's' : ''}`
+        if (avgMOS >= 4.0) {
+          items.push(_diagItem('success', 'Call quality good',
+            `MOS ${label} — excellent audio quality.`, []))
+        } else if (avgMOS >= 3.6) {
+          items.push(_diagItem('warning', 'Call quality moderate',
+            `MOS ${label} — noticeable to the caller.`,
+            ['Check latency and jitter — these are the most common causes of a low MOS']))
+          issues.push('mos')
+        } else {
+          items.push(_diagItem('danger', 'Poor call quality',
+            `MOS ${label} — clearly audible quality issues.`,
+            ['Check latency and jitter', 'Check for packet loss',
+             'Contact Voys support']))
+          issues.push('mos')
+        }
+      }
+    }
+
     // ── Subnet (desk phone only) ──
     if (state.deviceType === 'deskphone') {
       if (state.subnetMatch === true) {
         items.push(_diagItem('success', 'Subnet correct',
           'Computer and device are on the same network.', []))
       } else if (state.subnetMatch === false) {
-        items.push(_diagItem('danger', 'Subnet issue',
-          'Computer and device are not on the same network. The device may not be able to reach the PBX.',
-          ['Check that the device is connected to the same network as the computer',
-           'Check that the device is not accidentally connected to a guest network',
-           'Check the network settings of the device']))
-        issues.push('subnet')
+        if (natResult === true && _deviceOnSecondHopSubnet()) {
+          items.push(_diagItem('warning', 'Subnet mismatch — possibly no double-NAT on device',
+            `Computer and device are not on the same network. The device IP (${state.deviceIP}) appears to match the subnet of the second router in the traceroute — the device is likely on a separate network segment behind the second router.`,
+            ['Check whether the device is intentionally on a separate segment',
+             'Check whether the second router can be set to bridge mode',
+             'Contact Voys support for advice on the network setup']))
+          issues.push('subnet')
+        } else {
+          items.push(_diagItem('danger', 'Subnet issue',
+            'Computer and device are not on the same network. The device may not be able to reach the PBX.',
+            ['Check that the device is connected to the same network as the computer',
+             'Check that the device is not accidentally connected to a guest network',
+             'Check the network settings of the device']))
+          issues.push('subnet')
+        }
       }
     }
 
@@ -1576,6 +1610,15 @@
     return jitters.length > 0 ? Math.max(...jitters) : null
   }
 
+  function _deviceOnSecondHopSubnet() {
+    if (!state.deviceIP || !state.traceroute) return false
+    const { privateHops } = state.traceroute
+    if (!privateHops || privateHops.length < 2) return false
+    const secondSubnet = privateHops[1].ip.split('.').slice(0, 3).join('.')
+    const deviceSubnet = state.deviceIP.split('.').slice(0, 3).join('.')
+    return secondSubnet === deviceSubnet
+  }
+
   function _diagItem(type, title, description, tips) {
     const icons = { success: '✓', warning: '⚠', danger: '✕' }
     const colors = {
@@ -1597,12 +1640,6 @@
 
   function initStep4() {
     state.timestamp = new Date().toISOString()
-
-    // Console dump section only for webphone
-    if (state.deviceType === 'webphone') {
-      document.getElementById('console-dump-section').classList.remove('d-none')
-    }
-
     regenerateReport()
     console.log('[report] Report generated, timestamp:', state.timestamp)
   }
