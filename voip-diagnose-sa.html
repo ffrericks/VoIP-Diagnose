@@ -815,7 +815,7 @@
   const STUN_SERVER  = 'stun:stun.cloudflare.com:3478'
   const PING_SERVERS = [
     { name: 'Voys',       url: 'https://websocket.voys.co' },
-    { name: 'Afrihost',   url: 'https://afrihost.com' },
+    { name: 'Afrihost',   url: 'https://clientzone.afrihost.com' },
     { name: 'Cloudflare', url: 'https://1.1.1.1' }
   ]
   const PING_SAMPLES = 5
@@ -1734,7 +1734,7 @@
     sep()
 
     // ── Terminal ping ──
-    title('PING TO HA.VOYS.NL (terminal measurement)')
+    title('PING TO SIP.VOYS.CO.ZA (terminal measurement)')
     if (state.pingAdvanced) {
       line('Average', state.pingAdvanced.avg + ' ms')
       line('Minimum', state.pingAdvanced.min + ' ms')

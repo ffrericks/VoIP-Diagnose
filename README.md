@@ -10,8 +10,11 @@ A browser-based wizard that guides users through a network analysis for VoIP tro
 |------|----------|----------|
 | `voip-diagnose.html` | Dutch | Voys customers in the Netherlands |
 | `voip-diagnose-eng.html` | English | International customers and support |
+| `voip-diagnose-sa.html` | English | Voys South Africa customers |
 
-Both files are identical in functionality. Each is a single self-contained HTML file that can be opened directly in a browser or hosted on any static web server.
+All files are identical in functionality. Each is a single self-contained HTML file that can be opened directly in a browser or hosted on any static web server.
+
+The South Africa version uses SA-specific endpoints: `sip.voys.co.za` (ping target) and `clientzone.afrihost.com` (secondary latency check) instead of the Netherlands equivalents.
 
 ---
 
