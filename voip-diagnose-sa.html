@@ -1,0 +1,2001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voys VoIP Diagnostic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+  /* ═══════════════════════════════════════
+     Voys brand theme — Bootstrap 5 overrides
+     Primary colour: #270697
+     Font: Montserrat
+  ═══════════════════════════════════════ */
+
+  :root {
+    --bs-primary: #270697;
+    --bs-primary-rgb: 39, 6, 151;
+    --bs-font-sans-serif: 'Montserrat', sans-serif;
+    --bs-link-color: #270697;
+    --bs-link-hover-color: #1d0572;
+  }
+
+  body {
+    background-color: #f5f4fb;
+    color: #1a1a2e;
+  }
+
+  /* ── Wizard step animation ── */
+  .wizard-step {
+    animation: fadeIn 0.2s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Step badge (e.g. "Step 1 of 4") ── */
+  .step-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #270697;
+    background-color: rgba(39, 6, 151, 0.08);
+    padding: 3px 12px;
+    border-radius: 12px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  /* ── Device type buttons (large selection, Step 1) ── */
+  .device-btn {
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+    border-width: 2px;
+    transition: all 0.15s ease;
+    line-height: 1.4;
+  }
+
+  .device-btn:hover {
+    background-color: rgba(39, 6, 151, 0.04);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(39, 6, 151, 0.12);
+  }
+
+  /* ── Card ── */
+  .card {
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 14px;
+  }
+
+  /* ── Primary button ── */
+  .btn-primary {
+    background-color: #270697;
+    border-color: #270697;
+  }
+  .btn-primary:hover,
+  .btn-primary:focus {
+    background-color: #1d0572;
+    border-color: #1d0572;
+  }
+  .btn-primary:active {
+    background-color: #160455;
+    border-color: #160455;
+  }
+
+  /* ── Outline primary button ── */
+  .btn-outline-primary {
+    color: #270697;
+    border-color: #270697;
+  }
+  .btn-outline-primary:hover {
+    background-color: #270697;
+    border-color: #270697;
+    color: #fff;
+  }
+
+  /* ── Primary text colour ── */
+  .text-primary {
+    color: #270697 !important;
+  }
+
+  /* ── Primary alert (step plan background) ── */
+  .alert-primary {
+    background-color: rgba(39, 6, 151, 0.06);
+    border-color: rgba(39, 6, 151, 0.18);
+    color: #1a1a2e;
+  }
+
+  /* ── Focus state for form elements ── */
+  .form-select:focus,
+  .form-control:focus {
+    border-color: #270697;
+    box-shadow: 0 0 0 0.2rem rgba(39, 6, 151, 0.15);
+  }
+
+  /* ── Back link button ── */
+  .btn-link.text-muted {
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+  .btn-link.text-muted:hover {
+    color: #270697 !important;
+  }
+
+  /* ── Result cards (Step 3) ── */
+  .result-card {
+    border-radius: 10px;
+    padding: 0.875rem 1rem;
+    border: 1px solid;
+  }
+  .result-card.result-success {
+    background-color: rgba(25, 135, 84, 0.06);
+    border-color: rgba(25, 135, 84, 0.25);
+  }
+  .result-card.result-danger {
+    background-color: rgba(220, 53, 69, 0.06);
+    border-color: rgba(220, 53, 69, 0.25);
+  }
+  .result-card.result-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.4);
+  }
+  .result-card.result-secondary {
+    background-color: rgba(108, 117, 125, 0.08);
+    border-color: rgba(108, 117, 125, 0.2);
+    color: #6c757d;
+  }
+  .result-card.result-loading {
+    background-color: rgba(39, 6, 151, 0.04);
+    border-color: rgba(39, 6, 151, 0.12);
+  }
+  .result-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .result-value {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .result-note {
+    font-size: 0.78rem;
+    color: #6c757d;
+    margin-top: 5px;
+  }
+  </style>
+</head>
+<body>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-8 col-lg-6">
+
+        <!-- Header -->
+        <div class="mb-4">
+          <img src="https://www.voys.nl/app/themes/voys/public/build/assets/logo-C9xaOGPZ.svg"
+               alt="Voys" height="32" class="mb-3 d-block">
+          <h1 class="h3 fw-bold text-primary mb-1">VoIP Diagnostic</h1>
+          <p class="text-muted mb-0 small">Analyse your connection step by step</p>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STEP 1 — Select device type
+        ═══════════════════════════════════════ -->
+        <div id="step-1" class="wizard-step">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <div class="step-badge mb-3">Step 1 of 4</div>
+              <h2 class="h5 fw-semibold mb-1">Which device is experiencing the issue?</h2>
+              <p class="text-muted small mb-4">Select the type of device you use to make calls</p>
+
+              <div class="d-grid gap-3">
+                <button class="btn btn-outline-primary btn-lg text-start device-btn"
+                        onclick="selectDeviceType('webphone')">
+                  <span class="fw-semibold d-block">Webphone</span>
+                  <span class="text-muted small fw-normal">Calls via the browser or desktop app</span>
+                </button>
+                <button class="btn btn-outline-primary btn-lg text-start device-btn"
+                        onclick="selectDeviceType('deskphone')">
+                  <span class="fw-semibold d-block">Desk phone or DECT handset</span>
+                  <span class="text-muted small fw-normal">Physical desk phone or wireless handset</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STEP 2A — Desk phone / DECT
+        ═══════════════════════════════════════ -->
+        <div id="step-2a" class="wizard-step d-none">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <button class="btn btn-link btn-sm text-muted p-0 mb-3"
+                      onclick="showStep('step-1')">← Back</button>
+              <div class="step-badge mb-3">Step 2 of 4</div>
+              <h2 class="h5 fw-semibold mb-1">Device details</h2>
+              <p class="text-muted small mb-4">Select the brand of your device</p>
+
+              <!-- Brand selection -->
+              <div class="mb-3">
+                <label class="form-label fw-medium" for="brand-select">Brand</label>
+                <select class="form-select" id="brand-select" onchange="onBrandChange()">
+                  <option value="">— Select a brand —</option>
+                  <option value="yealink">Yealink</option>
+                  <option value="gigaset">Gigaset</option>
+                  <option value="snom">Snom</option>
+                  <option value="grandstream">Grandstream</option>
+                  <option value="cisco">Cisco SPA</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <!-- Type selection (Yealink only) -->
+              <div class="mb-3 d-none" id="model-type-group">
+                <label class="form-label fw-medium">Type</label>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-outline-secondary btn-sm" id="type-vast"
+                          onclick="selectModelType('Desk phone')">Desk phone</button>
+                  <button class="btn btn-outline-secondary btn-sm" id="type-dect"
+                          onclick="selectModelType('DECT base station')">DECT base station</button>
+                </div>
+              </div>
+
+              <!-- Model name (free text, for report) -->
+              <div class="mb-3 d-none" id="model-name-group">
+                <label class="form-label fw-medium" for="model-input">
+                  Model <span class="text-muted fw-normal">(optional)</span>
+                </label>
+                <input type="text" class="form-control" id="model-input"
+                       placeholder="e.g. T54W"
+                       oninput="state.model = this.value.trim() || null">
+              </div>
+
+              <!-- IP step plan (appears after brand selection) -->
+              <div class="d-none" id="stappenplan-container">
+                <div class="alert alert-primary p-3 mb-3">
+                  <p class="fw-semibold mb-2 small">How to find the IP address of your device:</p>
+                  <ol class="mb-0 ps-3 small" id="stappenplan-steps"></ol>
+                </div>
+
+                <!-- IP address input (after step plan) -->
+                <div class="mb-4">
+                  <label class="form-label fw-medium" for="device-ip-input">IP address of the device</label>
+                  <input type="text" class="form-control" id="device-ip-input"
+                         placeholder="e.g. 192.168.1.100"
+                         oninput="onDeviceIPInput(this.value)">
+                  <div class="form-text">Enter the IP address shown on your device</div>
+                </div>
+              </div>
+
+              <!-- IP input for 'Other' (no step plan) -->
+              <div class="d-none mb-4" id="other-ip-container">
+                <label class="form-label fw-medium" for="other-ip-input">IP address of the device</label>
+                <input type="text" class="form-control" id="other-ip-input"
+                       placeholder="e.g. 192.168.1.100"
+                       oninput="onDeviceIPInput(this.value)">
+                <div class="form-text">Consult your device manual to find the IP address</div>
+              </div>
+
+              <!-- Next button (appears after IP entry) -->
+              <button class="btn btn-primary w-100 d-none" id="btn-2a-next"
+                      onclick="goToNetworkAnalysis()">
+                Go to network analysis →
+              </button>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STEP 2B — Webphone
+        ═══════════════════════════════════════ -->
+        <div id="step-2b" class="wizard-step d-none">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <button class="btn btn-link btn-sm text-muted p-0 mb-3"
+                      onclick="showStep('step-1')">← Back</button>
+              <div class="step-badge mb-3">Step 2 of 4</div>
+              <h2 class="h5 fw-semibold mb-1">Webphone</h2>
+              <p class="text-muted small mb-4">Optionally add a console log for a more detailed analysis of your calls.</p>
+
+              <!-- Console log -->
+              <div class="mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h3 class="h6 fw-semibold mb-0">
+                    Console log
+                    <span class="text-muted fw-normal small ms-1">optional</span>
+                  </h3>
+                  <button id="btn-toggle-console" class="btn btn-outline-secondary btn-sm"
+                          onclick="toggleConsoleDump()">− Hide</button>
+                </div>
+                <div id="console-dump-input">
+                  <div class="alert alert-primary p-3 mb-3">
+                    <p class="fw-semibold small mb-2">How to get the console log:</p>
+                    <ol class="small mb-0 ps-3">
+                      <li class="mb-1">Open the webphone in the browser</li>
+                      <li class="mb-1">Press <strong>F12</strong> to open the developer tools</li>
+                      <li class="mb-1">Click on the <strong>Console</strong> tab</li>
+                      <li class="mb-1">Click the <strong>clear icon</strong> (🚫) or trash icon to clear the console</li>
+                      <li class="mb-1">Make a <strong>test call</strong> or perform the action that causes the issue</li>
+                      <li class="mb-1"><strong>Right-click</strong> anywhere in the console and choose <strong>Save as...</strong> or <strong>Select all</strong> and copy with <strong>Ctrl+C</strong></li>
+                      <li>Paste the result below</li>
+                    </ol>
+                  </div>
+                  <textarea class="form-control font-monospace small mb-2" rows="5"
+                            id="console-dump-area"
+                            placeholder="Paste the webphone console log here..."
+                            oninput="state.consoleDump = this.value.trim() || null; _parseAndRenderCalls(); regenerateReport()"></textarea>
+                  <div id="console-calls-summary"></div>
+                </div>
+              </div>
+
+              <button class="btn btn-primary w-100" onclick="goToNetworkAnalysis()">
+                Go to network analysis →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STEP 3 — Network analysis
+        ═══════════════════════════════════════ -->
+        <div id="step-3" class="wizard-step d-none">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <button class="btn btn-link btn-sm text-muted p-0 mb-3"
+                      onclick="goBackFromStep3()">← Back</button>
+              <div class="step-badge mb-3">Step 3 of 4</div>
+              <h2 class="h5 fw-semibold mb-1">Network analysis</h2>
+              <p class="text-muted small mb-4">Automatic tests will start immediately.</p>
+
+              <!-- Manual computer IP (desk phone only) -->
+              <div id="manual-ip-section" class="mb-4 d-none">
+                <div class="alert alert-primary p-3">
+                  <p class="fw-semibold small mb-2">IP address of this computer</p>
+                  <p class="small mb-2">Enter the following command in a terminal window to find your IP address:</p>
+                  <div id="ipconfig-cmd-windows" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace user-select-all">ipconfig</div>
+                  <div id="ipconfig-cmd-mac" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace user-select-all d-none">ipconfig getifaddr en0</div>
+                  <div class="d-flex gap-2 mb-2">
+                    <button class="btn btn-light btn-sm" onclick="selectIPConfigOS('windows')">Windows</button>
+                    <button class="btn btn-light btn-sm" onclick="selectIPConfigOS('mac')">Mac</button>
+                  </div>
+                  <p class="small mb-2">Find the <strong>IPv4 address</strong> and enter it below:</p>
+                  <input type="text" class="form-control form-control-sm" id="manual-computer-ip"
+                         placeholder="e.g. 192.168.1.45"
+                         oninput="onManualComputerIP(this.value)">
+                </div>
+              </div>
+
+              <!-- Subnet check (desk phone / DECT only) -->
+              <div id="subnet-section" class="d-none mb-4">
+                <h3 class="h6 fw-semibold mb-2">Subnet check</h3>
+                <div id="subnet-result"></div>
+              </div>
+
+              <!-- Browser ping (runs automatically in background) -->
+              <div class="mb-4">
+                <h3 class="h6 fw-semibold mb-2">
+                  Connection speed
+                  <span class="text-muted fw-normal small ms-1">automatic</span>
+                </h3>
+                <div id="ping-basic-result"></div>
+              </div>
+
+              <!-- Terminal ping (optional) -->
+              <div class="mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h3 class="h6 fw-semibold mb-0">
+                    More accurate measurement
+                    <span class="text-muted fw-normal small ms-1">optional</span>
+                  </h3>
+                  <button id="btn-toggle-terminal" class="btn btn-outline-secondary btn-sm"
+                          onclick="toggleTerminalPing()">+ Add</button>
+                </div>
+
+                <div id="terminal-ping-section" class="d-none">
+
+                  <!-- OS tabs -->
+                  <div class="d-flex gap-2 mb-3">
+                    <button id="tab-windows" class="btn btn-primary btn-sm"
+                            onclick="selectPingOS('windows')">Windows</button>
+                    <button id="tab-mac" class="btn btn-outline-secondary btn-sm"
+                            onclick="selectPingOS('mac')">Mac / Linux</button>
+                  </div>
+
+                  <!-- Windows instructions -->
+                  <div id="ping-os-windows">
+                    <ol class="small mb-3 ps-3">
+                      <li class="mb-1">Press <strong>Windows key + R</strong>, type <strong>cmd</strong> and press Enter</li>
+                      <li class="mb-1">Copy and paste the following command and press Enter:</li>
+                    </ol>
+                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">ping sip.voys.co.za -n 20</div>
+                    <p class="small text-muted mb-3">Wait until the command completes. Then select <strong>all text</strong> in the window — click at the very top, scroll down, hold <strong>Shift</strong> and click at the bottom. Then press <strong>Ctrl+C</strong> and paste the result below.</p>
+                  </div>
+
+                  <!-- Mac / Linux instructions -->
+                  <div id="ping-os-mac" class="d-none">
+                    <ol class="small mb-3 ps-3">
+                      <li class="mb-1">Open <strong>Terminal</strong> (Spotlight: <strong>Cmd + Space</strong>, type Terminal)</li>
+                      <li class="mb-1">Copy and paste the following command and press Enter:</li>
+                    </ol>
+                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">ping -c 20 sip.voys.co.za</div>
+                    <p class="small text-muted mb-3">Wait until the command completes. Then select <strong>all text</strong> in the window (<strong>Ctrl+A</strong>), copy it (<strong>Ctrl+C</strong>) and paste it below.</p>
+                  </div>
+
+                  <textarea id="ping-paste-area" class="form-control font-monospace small mb-2"
+                            rows="6"
+                            placeholder="Paste the full ping output here (including the summary line at the bottom)..."></textarea>
+                  <button class="btn btn-outline-primary btn-sm w-100 mb-3"
+                          onclick="analyzePingInput()">Analyse ping output</button>
+
+                  <div id="ping-advanced-result"></div>
+                </div>
+              </div>
+
+              <!-- Double-NAT detection -->
+              <div class="mb-4">
+                <h3 class="h6 fw-semibold mb-2">Double-NAT detection</h3>
+
+                <!-- Automatic CGNAT check -->
+                <div class="mb-2">
+                  <span class="text-muted small">Automatic (CGNAT)</span>
+                  <div id="double-nat-result" class="mt-1"></div>
+                </div>
+
+                <!-- Traceroute (more accurate) -->
+                <div class="mt-3">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small">Traceroute <span class="fw-normal">(more accurate)</span></span>
+                    <button id="btn-toggle-traceroute" class="btn btn-outline-secondary btn-sm"
+                            onclick="toggleTraceroute()">+ Add</button>
+                  </div>
+
+                  <div id="traceroute-section" class="d-none">
+                    <div class="d-flex gap-2 mb-3">
+                      <button id="tab-tr-windows" class="btn btn-primary btn-sm"
+                              onclick="selectTracerouteOS('windows')">Windows</button>
+                      <button id="tab-tr-mac" class="btn btn-outline-secondary btn-sm"
+                              onclick="selectTracerouteOS('mac')">Mac / Linux</button>
+                    </div>
+
+                    <div id="tr-os-windows">
+                      <ol class="small mb-3 ps-3">
+                        <li class="mb-1">Press <strong>Windows key + R</strong>, type <strong>cmd</strong> and press Enter</li>
+                        <li class="mb-1">Copy and paste the following command and press Enter:</li>
+                      </ol>
+                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">tracert sip.voys.co.za</div>
+                      <p class="small text-muted mb-3">Wait until complete (may take 30 seconds). Copy all output and paste below.</p>
+                    </div>
+
+                    <div id="tr-os-mac" class="d-none">
+                      <ol class="small mb-3 ps-3">
+                        <li class="mb-1">Open <strong>Terminal</strong> (Spotlight: <strong>Cmd + Space</strong>, type Terminal)</li>
+                        <li class="mb-1">Copy and paste the following command and press Enter:</li>
+                      </ol>
+                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">traceroute sip.voys.co.za</div>
+                      <p class="small text-muted mb-3">Wait until complete. Copy all output and paste below.</p>
+                    </div>
+
+                    <textarea id="traceroute-paste-area" class="form-control font-monospace small mb-2"
+                              rows="6"
+                              placeholder="Paste the traceroute output here..."></textarea>
+                    <button class="btn btn-outline-primary btn-sm w-100 mb-3"
+                            onclick="analyzeTraceroute()">Analyse traceroute</button>
+
+                    <div id="traceroute-result"></div>
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn btn-primary w-100" onclick="showStep('step-diagnosis'); initDiagnosis()">
+                View results →
+              </button>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STEP 3B — Diagnosis summary
+        ═══════════════════════════════════════ -->
+        <div id="step-diagnosis" class="wizard-step d-none">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <button class="btn btn-link btn-sm text-muted p-0 mb-3"
+                      onclick="showStep('step-3')">← Back</button>
+              <div class="step-badge mb-3">Results</div>
+              <h2 class="h5 fw-semibold mb-1">Diagnosis summary</h2>
+              <p class="text-muted small mb-4">Based on the measurements</p>
+
+              <div id="diagnosis-items" class="d-flex flex-column gap-3 mb-4"></div>
+
+              <button class="btn btn-primary w-100" onclick="showStep('step-4'); initStep4()">
+                To report →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             STEP 4 — Report
+        ═══════════════════════════════════════ -->
+        <div id="step-4" class="wizard-step d-none">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <button class="btn btn-link btn-sm text-muted p-0 mb-3"
+                      onclick="showStep('step-diagnosis')">← Back</button>
+              <div class="step-badge mb-3">Step 4 of 4</div>
+              <h2 class="h5 fw-semibold mb-1">Report</h2>
+
+              <p class="text-muted small mb-4">Copy the report and paste it into your ticket or email.</p>
+
+              <!-- Report text -->
+              <div class="mb-3">
+                <textarea id="report-output" class="form-control font-monospace small"
+                          rows="18" readonly
+                          style="font-size: 0.78rem; resize: vertical; background: #f8f9fa;"></textarea>
+              </div>
+
+              <!-- Copy button -->
+              <button class="btn btn-primary w-100" onclick="copyReport()">
+                Copy report
+              </button>
+              <div id="copy-feedback" class="text-center text-success small mt-2 d-none">
+                ✓ Copied to clipboard
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- ═══════════════════════════════════════
+       STATE — always load first
+  ═══════════════════════════════════════ -->
+  <script>
+  // Central state for the entire wizard. All functions read and write to this object.
+  const state = {
+    // Step 1
+    deviceType: null,       // 'webphone' | 'deskphone'
+
+    // Step 2A (desk phone / DECT only)
+    brand: null,            // 'yealink' | 'gigaset' | 'snom' | 'grandstream' | 'cisco' | 'other'
+    modelType: null,        // 'Desk phone' | 'DECT base station' (relevant for Yealink only)
+    model: null,            // free text, entered by user
+    deviceIP: null,         // entered by user (e.g. '192.168.1.100')
+    computerIP: null,       // automatic via WebRTC (null if blocked by browser)
+    subnetMatch: null,      // true | false | null (null = detection failed or not applicable)
+
+    // Step 3 — network tests
+    pingBasic: null,        // { avg, min, max } in ms — null if CORS blocked
+    pingAdvanced: null,     // { raw: '...', avg, min, max, loss } — pasted by user
+    latency: null,          // { avg, min, max, samples: [] } in ms
+    doubleNAT: null,        // true | false | 'unknown' (CGNAT via WebRTC)
+    traceroute: null,       // { hops: [{nr, ip, times}], doubleNAT: true|false, privateHops: [] }
+
+    // Step 4 — report
+    consoleDump: null,      // optional text from user (webphone console export)
+    parsedCalls: null,      // array of calls parsed from the console log
+    timestamp: null         // ISO date string, set at report generation
+  }
+
+  console.log('[state] State object loaded')
+  </script>
+
+  <!-- ═══════════════════════════════════════
+       WIZARD — step navigation
+  ═══════════════════════════════════════ -->
+  <script>
+  function showStep(stepId) {
+    document.querySelectorAll('.wizard-step').forEach(el => el.classList.add('d-none'))
+
+    const target = document.getElementById(stepId)
+    if (!target) {
+      console.error('[wizard] Step not found:', stepId)
+      return
+    }
+
+    target.classList.remove('d-none')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    console.log('[wizard] Step shown:', stepId)
+  }
+
+  function selectDeviceType(type) {
+    state.deviceType = type
+    console.log('[wizard] Device type selected:', type)
+
+    if (type === 'webphone') {
+      showStep('step-2b')
+    } else {
+      showStep('step-2a')
+    }
+  }
+
+  function goToNetworkAnalysis() {
+    console.log('[wizard] To network analysis. State:', JSON.stringify(state))
+    showStep('step-3')
+    if (typeof initStep3 === 'function') initStep3()
+  }
+
+  function goBackFromStep3() {
+    if (state.deviceType === 'webphone') {
+      showStep('step-2b')
+    } else {
+      showStep('step-2a')
+    }
+  }
+
+  console.log('[wizard] Wizard module loaded')
+  </script>
+
+  <!-- ═══════════════════════════════════════
+       DEVICES — brand/type flows and step plans
+  ═══════════════════════════════════════ -->
+  <script>
+  const BRANDS = {
+    yealink: {
+      name: 'Yealink',
+      hasModelTypes: true,
+      steps: {
+        'Desk phone': [
+          'Press the <strong>OK button</strong> once on the phone'
+        ],
+        'DECT base station': [
+          'Press the <strong>OK button</strong> <strong>3 times</strong> on the base station'
+        ]
+      }
+    },
+    gigaset: {
+      name: 'Gigaset',
+      hasModelTypes: false,
+      defaultType: 'DECT',
+      steps: {
+        'DECT': [
+          'Option A: Press the <strong>paging button</strong> on the base station — the IP address will appear on the handset',
+          'Option B: <strong>Menu → Settings → Base → Local Network</strong> (PIN: <strong>0000</strong>)'
+        ]
+      }
+    },
+    snom: {
+      name: 'Snom',
+      hasModelTypes: false,
+      defaultType: 'Desk phone',
+      steps: {
+        'Desk phone': [
+          'Press the <strong>settings button</strong> (gear icon)',
+          'Go to <strong>Information → System Information</strong>'
+        ]
+      }
+    },
+    grandstream: {
+      name: 'Grandstream',
+      hasModelTypes: false,
+      defaultType: 'Desk phone',
+      steps: {
+        'Desk phone': [
+          'Press <strong>Menu</strong>',
+          'Go to <strong>Status → Network Status → IPv4 Address</strong>'
+        ]
+      }
+    },
+    cisco: {
+      name: 'Cisco SPA',
+      hasModelTypes: false,
+      defaultType: 'Desk phone',
+      steps: {
+        'Desk phone': [
+          'Press the <strong>Menu button</strong> (page icon)',
+          'Press key <strong>9</strong>'
+        ]
+      }
+    },
+    other: {
+      name: 'Other',
+      hasModelTypes: false,
+      steps: null
+    }
+  }
+
+  function onBrandChange() {
+    const brandKey = document.getElementById('brand-select').value
+
+    // Reset state
+    state.brand     = brandKey || null
+    state.modelType = null
+    state.model     = null
+    state.deviceIP  = null
+
+    // Reset all input fields
+    document.getElementById('model-input').value     = ''
+    document.getElementById('device-ip-input').value = ''
+    document.getElementById('other-ip-input').value  = ''
+
+    // Hide all dependent sections
+    _hide('model-type-group')
+    _hide('model-name-group')
+    _hide('stappenplan-container')
+    _hide('other-ip-container')
+    _hide('btn-2a-next')
+
+    if (!brandKey) return
+
+    const brand = BRANDS[brandKey]
+    console.log('[devices] Brand selected:', brand.name)
+
+    if (brandKey === 'other') {
+      _show('model-name-group')
+      _show('other-ip-container')
+      return
+    }
+
+    _show('model-name-group')
+
+    if (brand.hasModelTypes) {
+      _show('model-type-group')
+      document.getElementById('type-vast').className = 'btn btn-outline-secondary btn-sm'
+      document.getElementById('type-dect').className = 'btn btn-outline-secondary btn-sm'
+    } else {
+      state.modelType = brand.defaultType
+      _renderStappenplan(brandKey, brand.defaultType)
+      _show('stappenplan-container')
+    }
+  }
+
+  function selectModelType(type) {
+    state.modelType = type
+    console.log('[devices] Type selected:', type)
+
+    const isDeskPhone = (type === 'Desk phone')
+    document.getElementById('type-vast').className = isDeskPhone
+      ? 'btn btn-primary btn-sm'
+      : 'btn btn-outline-secondary btn-sm'
+    document.getElementById('type-dect').className = !isDeskPhone
+      ? 'btn btn-primary btn-sm'
+      : 'btn btn-outline-secondary btn-sm'
+
+    _renderStappenplan(state.brand, type)
+    _show('stappenplan-container')
+  }
+
+  function onDeviceIPInput(value) {
+    state.deviceIP = value.trim() || null
+
+    if (state.deviceIP && state.deviceIP.length >= 7) {
+      _show('btn-2a-next')
+    } else {
+      _hide('btn-2a-next')
+    }
+  }
+
+  function _renderStappenplan(brandKey, modelType) {
+    const brand = BRANDS[brandKey]
+    const steps = brand.steps[modelType]
+
+    if (!steps) {
+      console.error('[devices] No step plan found for:', brandKey, modelType)
+      return
+    }
+
+    document.getElementById('stappenplan-steps').innerHTML =
+      steps.map(step => `<li class="mb-1">${step}</li>`).join('')
+
+    document.getElementById('device-ip-input').value = ''
+    state.deviceIP = null
+    _hide('btn-2a-next')
+
+    console.log('[devices] Step plan rendered for:', brandKey, modelType)
+  }
+
+  function _show(id) { document.getElementById(id).classList.remove('d-none') }
+  function _hide(id) { document.getElementById(id).classList.add('d-none') }
+
+  console.log('[devices] Devices module loaded, brands:', Object.keys(BRANDS).join(', '))
+  </script>
+
+  <!-- ═══════════════════════════════════════
+       NETWORK — network tests
+  ═══════════════════════════════════════ -->
+  <script>
+  const STUN_SERVER  = 'stun:stun.cloudflare.com:3478'
+  const PING_SERVERS = [
+    { name: 'Voys',       url: 'https://websocket.voys.co' },
+    { name: 'Afrihost',   url: 'https://afrihost.com' },
+    { name: 'Cloudflare', url: 'https://1.1.1.1' }
+  ]
+  const PING_SAMPLES = 5
+
+  // ── Step 3 initialisation ────────────────────────────────────────────────
+
+  function initStep3() {
+    console.log('[network] Step 3 started. Device type:', state.deviceType)
+
+    // Subnet section and IP input only for desk phone / DECT
+    if (state.deviceType === 'deskphone') {
+      _show('manual-ip-section')
+      document.getElementById('subnet-section').classList.remove('d-none')
+      _setResult('subnet-result', 'loading', 'Running subnet check...')
+    }
+
+    _setResult('ping-basic-result', 'loading', 'Measuring...')
+    _setResult('double-nat-result', 'loading', 'Detecting...')
+
+    // Start tests in parallel
+    runBrowserPing()
+    runWebRTCDetection()
+  }
+
+  // ── Browser ping ─────────────────────────────────────────────────────────
+
+  async function runBrowserPing() {
+    const results = []
+
+    for (const server of PING_SERVERS) {
+      // Warmup per server
+      try {
+        await fetch(server.url + '?_w=' + Date.now(), { mode: 'no-cors' })
+      } catch (_) {}
+      await _sleep(150)
+
+      const samples = []
+      for (let i = 0; i < PING_SAMPLES; i++) {
+        try {
+          const start = performance.now()
+          await fetch(server.url + '?_=' + Date.now(), { mode: 'no-cors' })
+          const ms = Math.round(performance.now() - start)
+          samples.push(ms)
+          console.log(`[network] Browser ping ${server.name} #${i + 1}: ${ms}ms`)
+        } catch (e) {
+          console.warn(`[network] Browser ping ${server.name} #${i + 1} failed:`, e.message)
+        }
+        if (i < PING_SAMPLES - 1) await _sleep(300)
+      }
+
+      if (samples.length > 0) {
+        const avg = Math.round(samples.reduce((a, b) => a + b, 0) / samples.length)
+        const jitter = samples.length > 1
+          ? Math.round(Math.sqrt(samples.reduce((sum, ms) => sum + Math.pow(ms - avg, 2), 0) / samples.length))
+          : null
+        results.push({
+          name: server.name,
+          avg,
+          min:    Math.min(...samples),
+          max:    Math.max(...samples),
+          jitter
+        })
+      }
+    }
+
+    if (results.length === 0) {
+      state.pingBasic = null
+      _setResult('ping-basic-result', 'secondary', 'Not available — use the terminal measurement below')
+      console.error('[network] All browser ping measurements failed')
+      return
+    }
+
+    state.pingBasic = { servers: results }
+    console.log('[network] Browser ping results:', JSON.stringify(results))
+    _renderPingBasicResult()
+  }
+
+  function _renderPingBasicResult() {
+    const { servers } = state.pingBasic
+
+    const rows = servers.map(s => {
+      const latType   = s.avg    < 50 ? 'success' : s.avg    < 100 ? 'warning' : 'danger'
+      const jitType   = s.jitter < 10 ? 'success' : s.jitter <  30 ? 'warning' : 'danger'
+      const dot       = `<span class="badge bg-${latType === 'success' ? 'success' : latType === 'warning' ? 'warning' : 'danger'} rounded-circle p-1 me-2" style="width:8px;height:8px;display:inline-block;vertical-align:middle"></span>`
+      const jitCell   = s.jitter !== null
+        ? `<span class="text-${jitType === 'success' ? 'success' : jitType === 'warning' ? 'warning' : 'danger'} fw-semibold">${s.jitter} ms</span>`
+        : `<span class="text-muted">—</span>`
+      return `
+        <tr>
+          <td class="small ps-3">${dot}${s.name}</td>
+          <td class="small fw-semibold text-end">${s.avg} ms</td>
+          <td class="small text-muted text-end">${s.min}–${s.max}</td>
+          <td class="small text-end pe-3">${jitCell}</td>
+        </tr>
+      `
+    }).join('')
+
+    document.getElementById('ping-basic-result').innerHTML = `
+      <div class="result-card result-secondary p-0 overflow-hidden">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr class="table-light">
+              <th class="small fw-semibold ps-3">Server</th>
+              <th class="small fw-semibold text-end">Average</th>
+              <th class="small fw-semibold text-end">Min–Max</th>
+              <th class="small fw-semibold text-end pe-3">Jitter</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+        <div class="px-3 pb-2 pt-1">
+          <span class="result-note">HTTP response time — for accurate ms values use the terminal measurement below</span>
+        </div>
+      </div>
+    `
+  }
+
+  // ── WebRTC detection ──────────────────────────────────────────────────────
+
+  function runWebRTCDetection() {
+    return new Promise((resolve) => {
+      const localIPs  = []
+      let externalIP  = null
+      let settled     = false
+
+      let pc
+      try {
+        pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_SERVER }] })
+      } catch (e) {
+        console.error('[network] RTCPeerConnection creation failed:', e.message)
+        _handleWebRTCFailure()
+        return resolve()
+      }
+
+      const done = (reason) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeout)
+        try { pc.close() } catch (_) {}
+
+        // First real local IPv4 (not mDNS .local name)
+        state.computerIP = localIPs.find(ip => _isValidIPv4(ip)) || null
+
+        console.log('[network] WebRTC done (' + reason + '). Local IPs:', localIPs)
+        console.log('[network] Computer IP:', state.computerIP, '| External IP:', externalIP)
+
+        if (state.computerIP) {
+          document.getElementById('manual-computer-ip').value = state.computerIP
+          console.log('[network] Local IP auto-filled:', state.computerIP)
+        } else {
+          console.warn('[network] No local IP via WebRTC — manual entry required')
+        }
+
+        if (state.deviceType === 'deskphone') _doSubnetCheck()
+        _doDoubleNATCheck(externalIP)
+
+        resolve()
+      }
+
+      const timeout = setTimeout(() => {
+        console.warn('[network] WebRTC timeout after 6s')
+        done('timeout')
+      }, 6000)
+
+      pc.onicecandidate = (event) => {
+        if (!event.candidate) { done('gathering-complete'); return }
+
+        const cand = event.candidate.candidate
+        if (!cand) return
+
+        // Format: "foundation component transport priority address port typ type ..."
+        const parts    = cand.split(/\s+/)
+        if (parts.length < 8) return
+        const ip       = parts[4]
+        const typeMatch = cand.match(/\btyp\s+(host|srflx|relay)\b/)
+        if (!typeMatch) return
+        const candType = typeMatch[1]
+
+        if (candType === 'host' && !localIPs.includes(ip)) {
+          localIPs.push(ip)
+          console.log('[network] ICE host candidate:', ip)
+        } else if (candType === 'srflx' && !externalIP) {
+          externalIP = ip
+          console.log('[network] ICE srflx (external IP):', ip)
+        }
+      }
+
+      pc.createDataChannel('')
+      pc.createOffer()
+        .then(offer => pc.setLocalDescription(offer))
+        .catch(e => {
+          console.error('[network] WebRTC offer failed:', e.message)
+          done('offer-failed')
+        })
+    })
+  }
+
+  function _doSubnetCheck() {
+    if (!state.deviceIP) {
+      state.subnetMatch = null
+      _setResult('subnet-result', 'secondary', 'No device IP provided')
+      return
+    }
+
+    if (!state.computerIP) {
+      state.subnetMatch = null
+      document.getElementById('subnet-result').innerHTML = `
+        <div class="result-card result-secondary">
+          <span class="result-label">Could not be determined automatically</span>
+          <div class="result-note">
+            Check manually: do your computer IP and device IP
+            (<strong>${state.deviceIP}</strong>) start with the same three numbers?
+          </div>
+        </div>
+      `
+      return
+    }
+
+    const devicePfx   = state.deviceIP.split('.').slice(0, 3).join('.')
+    const computerPfx = state.computerIP.split('.').slice(0, 3).join('.')
+    state.subnetMatch = (devicePfx === computerPfx)
+
+    console.log('[network] Subnet check:', state.computerIP, 'vs', state.deviceIP,
+                '→', state.subnetMatch ? 'MATCH ✓' : 'NO MATCH ✗')
+
+    if (state.subnetMatch) {
+      document.getElementById('subnet-result').innerHTML = `
+        <div class="result-card result-success">
+          <span class="result-label">Same subnet ✓</span>
+          <div class="result-note">Computer: ${state.computerIP} — Device: ${state.deviceIP}</div>
+        </div>
+      `
+    } else {
+      document.getElementById('subnet-result').innerHTML = `
+        <div class="result-card result-danger">
+          <span class="result-label">Different subnet ⚠</span>
+          <div class="result-value">Computer and device are not on the same network</div>
+          <div class="result-note">Computer: ${state.computerIP} — Device: ${state.deviceIP}</div>
+        </div>
+      `
+    }
+  }
+
+  function _doDoubleNATCheck(externalIP) {
+    if (!externalIP) {
+      state.doubleNAT = 'unknown'
+      _setResult('double-nat-result', 'secondary', 'Could not be determined — no STUN response received')
+      return
+    }
+
+    if (_isPrivateIP(externalIP)) {
+      state.doubleNAT = true
+      console.log('[network] DOUBLE NAT detected — external IP is private:', externalIP)
+      document.getElementById('double-nat-result').innerHTML = `
+        <div class="result-card result-danger">
+          <span class="result-label">Double-NAT detected ⚠</span>
+          <div class="result-value">Your connection goes through two routers</div>
+          <div class="result-note">External IP: ${externalIP} (private address — indicates double NAT)</div>
+        </div>
+      `
+    } else {
+      state.doubleNAT = false
+      console.log('[network] No double-NAT — external IP:', externalIP)
+      document.getElementById('double-nat-result').innerHTML = `
+        <div class="result-card result-success">
+          <span class="result-label">No double-NAT ✓</span>
+          <div class="result-note">External IP: ${externalIP}</div>
+        </div>
+      `
+    }
+  }
+
+  function _handleWebRTCFailure() {
+    state.doubleNAT  = 'unknown'
+    state.computerIP = null
+    _setResult('double-nat-result', 'secondary', 'WebRTC not available in this browser or environment')
+    if (state.deviceType === 'deskphone') {
+      _setResult('subnet-result', 'secondary', 'Automatic subnet check not available')
+    }
+  }
+
+  // ── Traceroute ────────────────────────────────────────────────────────────
+
+  function toggleTraceroute() {
+    const section = document.getElementById('traceroute-section')
+    const btn     = document.getElementById('btn-toggle-traceroute')
+    if (section.classList.contains('d-none')) {
+      section.classList.remove('d-none')
+      btn.textContent = '− Hide'
+    } else {
+      section.classList.add('d-none')
+      btn.textContent = '+ Add'
+    }
+  }
+
+  function selectTracerouteOS(os) {
+    document.getElementById('tr-os-windows').classList.toggle('d-none', os !== 'windows')
+    document.getElementById('tr-os-mac').classList.toggle('d-none', os !== 'mac')
+    document.getElementById('tab-tr-windows').className =
+      os === 'windows' ? 'btn btn-primary btn-sm' : 'btn btn-outline-secondary btn-sm'
+    document.getElementById('tab-tr-mac').className =
+      os === 'mac' ? 'btn btn-primary btn-sm' : 'btn btn-outline-secondary btn-sm'
+  }
+
+  function analyzeTraceroute() {
+    const raw = document.getElementById('traceroute-paste-area').value.trim()
+    if (!raw) return
+
+    const result = _parseTraceroute(raw)
+
+    if (!result || result.hops.length === 0) {
+      document.getElementById('traceroute-result').innerHTML = `
+        <div class="result-card result-secondary">
+          <span class="result-label">Could not parse output</span>
+          <div class="result-note">Paste the full traceroute command output</div>
+        </div>
+      `
+      console.warn('[network] Traceroute output not recognised')
+      return
+    }
+
+    state.traceroute = result
+    console.log('[network] Traceroute result:', JSON.stringify(result))
+
+    _renderTracerouteResult()
+  }
+
+  function _parseTraceroute(text) {
+    const hops = []
+    const lines = text.split('\n')
+
+    for (const line of lines) {
+      let nr, ip, hostname
+
+      // Windows with hostname: "  1  <1 ms  <1 ms  <1 ms  router [10.13.0.1]"
+      const winHost = line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}(\S+)\s+\[([\d.]+)\]\s*$/)
+      if (winHost) { nr = +winHost[1]; hostname = winHost[2]; ip = winHost[3] }
+
+      // Windows without hostname: "  1  <1 ms  <1 ms  <1 ms  10.13.0.1"
+      if (!nr) {
+        const winIP = line.match(/^\s*(\d+)\s+(?:<?\d+\s*ms\s+){1,3}([\d.]+)\s*$/)
+        if (winIP) { nr = +winIP[1]; ip = winIP[2] }
+      }
+
+      // Mac/Linux with parentheses: "  1  192.168.1.1 (192.168.1.1)  0.725 ms"
+      if (!nr) {
+        const unixHost = line.match(/^\s*(\d+)\s+(\S+)\s+\(([\d.]+)\)/)
+        if (unixHost) { nr = +unixHost[1]; hostname = unixHost[2]; ip = unixHost[3] }
+      }
+
+      // Mac/Linux without parentheses: "  1  192.168.1.1  0.725ms"
+      if (!nr) {
+        const unixIP = line.match(/^\s*(\d+)\s+([\d.]+)\s+[\d.]+ms/)
+        if (unixIP) { nr = +unixIP[1]; ip = unixIP[2] }
+      }
+
+      // Timeout: 1, 2 or 3 asterisks
+      if (!nr) {
+        const timeout = line.match(/^\s*(\d+)\s+\*[\s*]+$/)
+        if (timeout) { nr = +timeout[1] }
+      }
+
+      if (nr) {
+        hops.push({ nr, ip: ip || null, hostname: hostname || null, timeout: !ip })
+      }
+    }
+
+    if (hops.length === 0) return null
+
+    // Double-NAT detection:
+    // Only the first 2 hops with an IP — beyond that, private addresses are ISP infrastructure.
+    // Hops with an ISP hostname (contains a dot, e.g. d915c338.afrihost.com) are ignored.
+    const candidateHops = hops
+      .filter(h => h.ip && _isPrivateIP(h.ip))
+      .filter(h => !h.hostname || !_isISPHostname(h.hostname))
+      .slice(0, 2)  // at most the first 2 private customer hops
+
+    const privateSubnets = [...new Set(candidateHops.map(h => h.ip.split('.').slice(0, 3).join('.')))]
+    const doubleNAT      = privateSubnets.length >= 2
+
+    if (doubleNAT) {
+      console.log('[network] Traceroute double-NAT detected. Subnets:', privateSubnets)
+    } else {
+      console.log('[network] No double-NAT. Candidate private hops:', candidateHops.map(h => h.ip))
+    }
+
+    return { hops, doubleNAT, privateHops: candidateHops }
+  }
+
+  function _isISPHostname(hostname) {
+    // Hostname with multiple parts (e.g. d915c338.afrihost.com) = ISP infra, not customer router
+    // Simple names like 'router' or 'gateway' = customer device
+    return hostname.includes('.') && hostname.split('.').length >= 2
+  }
+
+  function _renderTracerouteResult() {
+    const { hops, doubleNAT, privateHops } = state.traceroute
+    const el = document.getElementById('traceroute-result')
+
+    const hopRows = hops.map(h => {
+      const ipLabel    = h.timeout ? '<span class="text-muted">* timeout</span>' : h.ip
+      const hostLabel  = h.hostname && !h.timeout ? `<span class="text-muted ms-2" style="font-size:0.75rem">${h.hostname}</span>` : ''
+      const isPrivate  = h.ip && _isPrivateIP(h.ip)
+      const isISP      = isPrivate && h.hostname && _isISPHostname(h.hostname)
+      const badge      = isPrivate
+        ? isISP
+          ? ' <span class="badge bg-secondary ms-1" style="font-size:0.65rem">ISP</span>'
+          : ' <span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem">private</span>'
+        : ''
+      return `<tr><td class="small text-muted pe-3">${h.nr}</td><td class="small font-monospace">${ipLabel}${badge}${hostLabel}</td></tr>`
+    }).join('')
+
+    if (doubleNAT) {
+      el.innerHTML = `
+        <div class="result-card result-danger mb-2">
+          <span class="result-label">Double-NAT detected ⚠</span>
+          <div class="result-value">Connection passes through multiple private networks</div>
+          <div class="result-note">Private subnets found: ${[...new Set(privateHops.map(h => h.ip.split('.').slice(0,3).join('.')))].map(s => s + '.x').join(' and ')}</div>
+        </div>
+        <table class="table table-sm mb-0"><tbody>${hopRows}</tbody></table>
+      `
+    } else {
+      el.innerHTML = `
+        <div class="result-card result-success mb-2">
+          <span class="result-label">No double-NAT ✓</span>
+          <div class="result-note">Only one private subnet visible in the path</div>
+        </div>
+        <table class="table table-sm mb-0"><tbody>${hopRows}</tbody></table>
+      `
+    }
+  }
+
+  function onManualComputerIP(value) {
+    const ip = value.trim()
+    state.computerIP = _isValidIPv4(ip) ? ip : null
+    console.log('[network] Manual computer IP entered:', state.computerIP)
+    if (state.computerIP && state.deviceType === 'deskphone') _doSubnetCheck()
+  }
+
+  function selectIPConfigOS(os) {
+    document.getElementById('ipconfig-cmd-windows').classList.toggle('d-none', os !== 'windows')
+    document.getElementById('ipconfig-cmd-mac').classList.toggle('d-none', os !== 'mac')
+  }
+
+  // ── Terminal ping ─────────────────────────────────────────────────────────
+
+  function toggleTerminalPing() {
+    const section = document.getElementById('terminal-ping-section')
+    const btn     = document.getElementById('btn-toggle-terminal')
+    if (section.classList.contains('d-none')) {
+      section.classList.remove('d-none')
+      btn.textContent = '− Hide'
+    } else {
+      section.classList.add('d-none')
+      btn.textContent = '+ Add'
+    }
+  }
+
+  function selectPingOS(os) {
+    document.getElementById('ping-os-windows').classList.toggle('d-none', os !== 'windows')
+    document.getElementById('ping-os-mac').classList.toggle('d-none', os !== 'mac')
+    document.getElementById('tab-windows').className =
+      os === 'windows' ? 'btn btn-primary btn-sm' : 'btn btn-outline-secondary btn-sm'
+    document.getElementById('tab-mac').className =
+      os === 'mac' ? 'btn btn-primary btn-sm' : 'btn btn-outline-secondary btn-sm'
+  }
+
+  function analyzePingInput() {
+    const raw = document.getElementById('ping-paste-area').value.trim()
+    if (!raw) return
+
+    const result = _parsePingOutput(raw)
+
+    if (!result) {
+      document.getElementById('ping-advanced-result').innerHTML = `
+        <div class="result-card result-secondary">
+          <span class="result-label">Could not parse output</span>
+          <div class="result-note">Paste the full ping command output</div>
+        </div>
+      `
+      console.warn('[network] Ping output not recognised')
+      return
+    }
+
+    state.pingAdvanced = { raw, ...result }
+    console.log('[network] Advanced ping result:', JSON.stringify(state.pingAdvanced))
+
+    const type  = result.avg < 50 ? 'success' : result.avg < 100 ? 'warning' : 'danger'
+    const label = result.avg < 50 ? 'Good'    : result.avg < 100 ? 'Moderate'   : 'High'
+    const lossHtml   = result.loss !== null
+      ? `<div class="result-note">Packet loss: <strong>${result.loss}%</strong></div>`
+      : ''
+    const jitType    = result.jitter === null ? '' : result.jitter < 20 ? 'text-success' : result.jitter < 50 ? 'text-warning' : 'text-danger'
+    const jitterHtml = result.jitter !== null
+      ? `<div>Jitter: <strong class="${jitType}">${result.jitter} ms</strong></div>`
+      : ''
+
+    document.getElementById('ping-advanced-result').innerHTML = `
+      <div class="result-card result-${type}">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="result-label">${label}</span>
+            <div class="result-value">${result.avg} ms average</div>
+          </div>
+          <div class="text-end text-muted small">
+            <div>Min: ${result.min} ms</div>
+            <div>Max: ${result.max} ms</div>
+          </div>
+        </div>
+        ${jitterHtml}
+        ${lossHtml}
+        <div class="result-note">Parsed from terminal ping output</div>
+      </div>
+    `
+  }
+
+  // ── Parse ping output ─────────────────────────────────────────────────────
+
+  function _parsePingOutput(text) {
+    // Always extract individual times for jitter calculation
+    const timeMatches = [...text.matchAll(/time[<=]([\d.]+)\s*ms/gi)]
+    const times       = timeMatches.map(m => Math.round(+m[1]))
+    const jitter      = _calcJitter(times)
+
+    // Windows (NL): "Minimum = 12ms, Maximum = 25ms, Gemiddeld = 18ms"
+    // Windows (EN): "Minimum = 12ms, Maximum = 25ms, Average = 18ms"
+    const winMatch = text.match(
+      /Minimum\s*=\s*(\d+)\s*ms[^,]*,\s*Maximum\s*=\s*(\d+)\s*ms[^,]*,\s*(?:Gemiddeld|Average)\s*=\s*(\d+)\s*ms/i
+    )
+    if (winMatch) {
+      return {
+        min:    +winMatch[1],
+        max:    +winMatch[2],
+        avg:    +winMatch[3],
+        loss:   _parseWindowsLoss(text),
+        jitter
+      }
+    }
+
+    // macOS: "round-trip min/avg/max/stddev = 10.5/18.2/25.1/4.3 ms"
+    // Linux: "rtt min/avg/max/mdev = 10.5/18.2/25.1/4.3 ms"
+    const unixMatch = text.match(
+      /(?:round-trip|rtt)\s+min\/avg\/max\/\S+\s*=\s*([\d.]+)\/([\d.]+)\/([\d.]+)/i
+    )
+    if (unixMatch) {
+      return {
+        min:    Math.round(+unixMatch[1]),
+        avg:    Math.round(+unixMatch[2]),
+        max:    Math.round(+unixMatch[3]),
+        loss:   _parseUnixLoss(text),
+        jitter
+      }
+    }
+
+    // Fallback: individual reply lines with time=Xms or time<Xms
+    if (times.length > 0) {
+      const timeoutCount = (text.match(/Request timed out|Destination host unreachable/gi) || []).length
+      const total        = times.length + timeoutCount
+      const loss         = timeoutCount > 0 ? Math.round(timeoutCount / total * 100) : null
+      return {
+        min:  Math.min(...times),
+        avg:  Math.round(times.reduce((a, b) => a + b, 0) / times.length),
+        max:  Math.max(...times),
+        loss,
+        jitter
+      }
+    }
+
+    return null
+  }
+
+  function _calcJitter(times) {
+    if (times.length < 2) return null
+    const avg = times.reduce((a, b) => a + b, 0) / times.length
+    return Math.round(Math.sqrt(times.reduce((sum, ms) => sum + Math.pow(ms - avg, 2), 0) / times.length))
+  }
+
+  function _parseWindowsLoss(text) {
+    // "Verloren = 0 (0% verlies)" or "Lost = 0 (0% loss)"
+    const m = text.match(/\((\d+)%\s*(?:verlies|loss)\)/i)
+    return m ? +m[1] : null
+  }
+
+  function _parseUnixLoss(text) {
+    // "4 packets transmitted, 4 received, 0% packet loss"
+    const m = text.match(/(\d+)%\s*packet\s*loss/i)
+    return m ? +m[1] : null
+  }
+
+  // ── Helper functions ──────────────────────────────────────────────────────
+
+  function _isPrivateIP(ip) {
+    if (!_isValidIPv4(ip)) return false
+    return /^10\./.test(ip) ||
+           /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
+           /^192\.168\./.test(ip)
+  }
+
+  function _isValidIPv4(ip) {
+    return /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)
+  }
+
+  function _sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
+  function _setResult(elementId, type, message) {
+    const el = document.getElementById(elementId)
+    if (!el) return
+    if (type === 'loading') {
+      el.innerHTML = `
+        <div class="result-card result-loading">
+          <div class="d-flex align-items-center gap-2">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"
+                 aria-hidden="true"></div>
+            <span class="text-muted small">${message}</span>
+          </div>
+        </div>
+      `
+    } else {
+      el.innerHTML = `<div class="result-card result-${type}"><span class="small">${message}</span></div>`
+    }
+  }
+
+  console.log('[network] Network module loaded. STUN:', STUN_SERVER)
+  </script>
+
+  <!-- ═══════════════════════════════════════
+       REPORT — report generation and clipboard
+  ═══════════════════════════════════════ -->
+  <script>
+  function initDiagnosis() {
+    const items  = []
+    const issues = []
+
+    // ── Latency assessment ──
+    const pingAvg = _bestPingAvg()
+    const pingAdv = state.pingAdvanced ? state.pingAdvanced.avg : null
+    const latency = pingAdv !== null ? pingAdv : pingAvg
+
+    if (latency !== null) {
+      if (latency < 50) {
+        items.push(_diagItem('success', 'Latency good',
+          `Average response time is ${latency} ms — excellent for VoIP.`, []))
+      } else if (latency < 100) {
+        items.push(_diagItem('warning', 'Latency moderate',
+          `Average response time is ${latency} ms — acceptable but on the high side.`,
+          ['Check whether other devices are using a lot of bandwidth (streaming, downloads)',
+           'Try restarting your router',
+           'Ask your internet provider about line quality']))
+        issues.push('latency')
+      } else {
+        items.push(_diagItem('danger', 'Latency issue',
+          `Average response time is ${latency} ms — this is likely causing audio issues or delays in calls.`,
+          ['Check whether other devices are using a lot of bandwidth (streaming, downloads)',
+           'Connect your computer directly to the router with a network cable instead of wifi',
+           'Restart your router',
+           'Contact your internet provider — line quality may be an issue']))
+        issues.push('latency')
+      }
+    }
+
+    // ── Jitter ──
+    const worstJitter = _worstJitter()
+    if (worstJitter !== null) {
+      if (worstJitter < 20) {
+        items.push(_diagItem('success', 'Jitter good',
+          `Maximum jitter is ${worstJitter} ms — connection is stable.`, []))
+      } else if (worstJitter < 50) {
+        items.push(_diagItem('warning', 'Jitter moderate',
+          `Jitter is ${worstJitter} ms — the connection is fluctuating, which may cause minor audio issues.`,
+          ['Try using a wired network cable instead of wifi',
+           'Check whether other devices are using a lot of bandwidth']))
+        issues.push('jitter')
+      } else {
+        items.push(_diagItem('danger', 'Jitter issue',
+          `Jitter is ${worstJitter} ms — the connection is unstable. This causes audible glitches and dropouts.`,
+          ['Connect your computer directly to the router with a network cable',
+           'Check that the router is not overheating',
+           'Avoid wifi — jitter is structurally higher on wifi']))
+        issues.push('jitter')
+      }
+    }
+
+    // ── Packet loss ──
+    if (state.pingAdvanced && state.pingAdvanced.loss !== null && state.pingAdvanced.loss > 0) {
+      if (state.pingAdvanced.loss <= 2) {
+        items.push(_diagItem('warning', 'Minor packet loss',
+          `${state.pingAdvanced.loss}% of packets are lost — may cause minor audio issues.`,
+          ['Check the network cable between computer and router',
+           'Try a different wifi frequency (5 GHz instead of 2.4 GHz)']))
+        issues.push('loss')
+      } else {
+        items.push(_diagItem('danger', 'Packet loss',
+          `${state.pingAdvanced.loss}% of packets are lost — this causes poor call quality.`,
+          ['Connect your computer directly to the router with a network cable',
+           'Check that the router or modem is not overheating',
+           'Contact your internet provider']))
+        issues.push('loss')
+      }
+    }
+
+    // ── Double-NAT — traceroute takes priority over WebRTC ──
+    const natResult = state.traceroute !== null ? state.traceroute.doubleNAT : state.doubleNAT
+    const natSource = state.traceroute !== null ? 'traceroute' : 'automatic'
+
+    if (natResult === true) {
+      const _onSubnet = state.traceroute && _voipDeviceOnSecondHopSubnet()
+      const _caveatIP = state.deviceIP || state.computerIP
+      const _caveat = _onSubnet
+        ? ` The device (${_caveatIP}) is on the subnet of the second router — it may not be affected by double-NAT.`
+        : ''
+      items.push(_diagItem(_onSubnet ? 'warning' : 'danger', 'Double-NAT detected',
+        `Your connection passes through two routers each performing NAT. This can cause issues with VoIP.${_caveat} <span class="text-muted">(${natSource})</span>`,
+        ['Set the first router to bridge mode so only the second router performs NAT',
+         'Ask your internet provider if the modem/ONT can be set to bridge mode',
+         'Contact Voys support — they can help determine the correct setting']))
+      issues.push('doublenat')
+    } else if (natResult === false) {
+      items.push(_diagItem('success', 'No double-NAT', `Your connection goes through a single router. <span class="text-muted">(${natSource})</span>`, []))
+    }
+
+    // ── MOS (from console log) ──
+    if (state.parsedCalls && state.parsedCalls.length > 0) {
+      const withMOS = state.parsedCalls.filter(c => c.mosAvg !== undefined)
+      if (withMOS.length > 0) {
+        const avgMOS = withMOS.reduce((s, c) => s + c.mosAvg, 0) / withMOS.length
+        const count  = withMOS.length
+        const label  = `${avgMOS.toFixed(2)} average across ${count} call${count !== 1 ? 's' : ''}`
+        if (avgMOS >= 4.0) {
+          items.push(_diagItem('success', 'Call quality good',
+            `MOS ${label} — excellent audio quality.`, []))
+        } else if (avgMOS >= 3.6) {
+          items.push(_diagItem('warning', 'Call quality moderate',
+            `MOS ${label} — noticeable to the caller.`,
+            ['Check latency and jitter — these are the most common causes of a low MOS']))
+          issues.push('mos')
+        } else {
+          items.push(_diagItem('danger', 'Poor call quality',
+            `MOS ${label} — clearly audible quality issues.`,
+            ['Check latency and jitter', 'Check for packet loss',
+             'Contact Voys support']))
+          issues.push('mos')
+        }
+      }
+    }
+
+    // ── Subnet (desk phone only) ──
+    if (state.deviceType === 'deskphone') {
+      if (state.subnetMatch === true) {
+        items.push(_diagItem('success', 'Subnet correct',
+          'Computer and device are on the same network.', []))
+      } else if (state.subnetMatch === false) {
+        if (natResult === true && _deviceOnSecondHopSubnet()) {
+          items.push(_diagItem('warning', 'Subnet mismatch — possibly no double-NAT on device',
+            `Computer and device are not on the same network. The device IP (${state.deviceIP}) appears to match the subnet of the second router in the traceroute — the device is likely on a separate network segment behind the second router.`,
+            ['Check whether the device is intentionally on a separate segment',
+             'Check whether the second router can be set to bridge mode',
+             'Contact Voys support for advice on the network setup']))
+          issues.push('subnet')
+        } else {
+          items.push(_diagItem('danger', 'Subnet issue',
+            'Computer and device are not on the same network. The device may not be able to reach the PBX.',
+            ['Check that the device is connected to the same network as the computer',
+             'Check that the device is not accidentally connected to a guest network',
+             'Check the network settings of the device']))
+          issues.push('subnet')
+        }
+      }
+    }
+
+    // ── All good ──
+    if (issues.length === 0 && items.length > 0) {
+      items.unshift(_diagItem('success', 'All tests passed',
+        'No network issues found. If you are still experiencing problems, they may be related to the Voys configuration or the device itself.', []))
+    }
+
+    document.getElementById('diagnosis-items').innerHTML = items.join('')
+    console.log('[report] Diagnosis complete. Issues:', issues.length === 0 ? 'none' : issues.join(', '))
+  }
+
+  function _bestPingAvg() {
+    if (!state.pingBasic || !state.pingBasic.servers) return null
+    return Math.min(...state.pingBasic.servers.map(s => s.avg))
+  }
+
+  function _worstJitter() {
+    // Terminal ping takes priority — more accurate than browser HTTP measurement
+    if (state.pingAdvanced && state.pingAdvanced.jitter !== null && state.pingAdvanced.jitter !== undefined) {
+      return state.pingAdvanced.jitter
+    }
+    if (!state.pingBasic || !state.pingBasic.servers) return null
+    const jitters = state.pingBasic.servers.map(s => s.jitter).filter(j => j !== null)
+    return jitters.length > 0 ? Math.max(...jitters) : null
+  }
+
+  function _deviceOnSecondHopSubnet() {
+    if (!state.deviceIP || !state.traceroute) return false
+    const { privateHops } = state.traceroute
+    if (!privateHops || privateHops.length < 2) return false
+    const secondSubnet = privateHops[1].ip.split('.').slice(0, 3).join('.')
+    const deviceSubnet = state.deviceIP.split('.').slice(0, 3).join('.')
+    return secondSubnet === deviceSubnet
+  }
+
+  function _voipDeviceOnSecondHopSubnet() {
+    // Use the device IP if available (deskphone / DECT),
+    // otherwise fall back to the computer IP (webphone = device and computer are the same).
+    // Only check the 2nd hop: being on the 2nd (inner) router's subnet means the device may not be affected.
+    // Being on the 1st hop subnet means the device is BETWEEN the two routers — that IS double-NAT.
+    const relevantIP = state.deviceIP || state.computerIP
+    if (!relevantIP || !state.traceroute) return false
+    const { privateHops } = state.traceroute
+    if (!privateHops || privateHops.length < 2) return false
+    const secondHopSubnet = privateHops[1].ip.split('.').slice(0, 3).join('.')
+    const relevantSubnet  = relevantIP.split('.').slice(0, 3).join('.')
+    return secondHopSubnet === relevantSubnet
+  }
+
+  function _diagItem(type, title, description, tips) {
+    const icons = { success: '✓', warning: '⚠', danger: '✕' }
+    const colors = {
+      success: 'result-success',
+      warning: 'result-warning',
+      danger:  'result-danger'
+    }
+    const tipsHtml = tips.length > 0
+      ? `<ul class="mb-0 mt-2 ps-3 small">${tips.map(t => `<li class="mb-1">${t}</li>`).join('')}</ul>`
+      : ''
+    return `
+      <div class="result-card ${colors[type]}">
+        <div class="fw-semibold small mb-1">${icons[type]} ${title}</div>
+        <div class="small">${description}</div>
+        ${tipsHtml}
+      </div>
+    `
+  }
+
+  function initStep4() {
+    state.timestamp = new Date().toISOString()
+    regenerateReport()
+    console.log('[report] Report generated, timestamp:', state.timestamp)
+  }
+
+  function regenerateReport() {
+    const text = buildReport()
+    document.getElementById('report-output').value = text
+  }
+
+  function buildReport() {
+    const ts = state.timestamp
+      ? new Date(state.timestamp).toLocaleString('en-GB')
+      : new Date().toLocaleString('en-GB')
+
+    const lines = []
+    const line  = (label, value) => lines.push(`${label}: ${value}`)
+    const sep   = () => lines.push('─'.repeat(40))
+    const title = (t) => lines.push(t)
+
+    title('VOYS VOIP DIAGNOSTIC REPORT')
+    title('Generated on ' + ts)
+    sep()
+
+    // ── Device ──
+    title('DEVICE')
+    const deviceLabel = state.deviceType === 'webphone' ? 'Webphone' : 'Desk phone / DECT handset'
+    line('Type', deviceLabel)
+
+    if (state.deviceType === 'deskphone') {
+      if (state.brand) {
+        const brandNames = {
+          yealink: 'Yealink', gigaset: 'Gigaset', snom: 'Snom',
+          grandstream: 'Grandstream', cisco: 'Cisco SPA', other: 'Other'
+        }
+        line('Brand', brandNames[state.brand] || state.brand)
+      }
+      if (state.modelType) line('Device type', state.modelType)
+      if (state.model)     line('Model', state.model)
+      if (state.deviceIP)  line('Device IP', state.deviceIP)
+    }
+
+    if (state.computerIP) {
+      line('Computer IP', state.computerIP)
+    } else {
+      line('Computer IP', 'Could not be determined automatically')
+    }
+
+    sep()
+
+    // ── Subnet check ──
+    if (state.deviceType === 'deskphone') {
+      title('SUBNET CHECK')
+      if (state.subnetMatch === true) {
+        line('Result', 'Same subnet ✓')
+      } else if (state.subnetMatch === false) {
+        line('Result', 'Different subnet — computer and device are not on the same network ⚠')
+      } else {
+        line('Result', 'Could not be determined automatically')
+        if (state.deviceIP) line('Device IP', state.deviceIP)
+      }
+      sep()
+    }
+
+    // ── Browser ping ──
+    title('CONNECTION SPEED (browser measurement)')
+    if (state.pingBasic && state.pingBasic.servers) {
+      state.pingBasic.servers.forEach(s => {
+        const jitStr = s.jitter !== null ? `, jitter ${s.jitter} ms` : ''
+        line(s.name, `${s.avg} ms average (min ${s.min} – max ${s.max} ms${jitStr})`)
+      })
+    } else {
+      lines.push('Not available')
+    }
+    sep()
+
+    // ── Terminal ping ──
+    title('PING TO HA.VOYS.NL (terminal measurement)')
+    if (state.pingAdvanced) {
+      line('Average', state.pingAdvanced.avg + ' ms')
+      line('Minimum', state.pingAdvanced.min + ' ms')
+      line('Maximum', state.pingAdvanced.max + ' ms')
+      if (state.pingAdvanced.loss !== null) {
+        line('Packet loss', state.pingAdvanced.loss + '%')
+      }
+    } else {
+      lines.push('Not performed')
+    }
+    sep()
+
+    // ── Double-NAT ──
+    title('DOUBLE-NAT DETECTION')
+    if (state.traceroute) {
+      line('Method', 'Traceroute')
+      line('Result', state.traceroute.doubleNAT
+        ? 'Double-NAT detected — multiple private subnets in path ⚠'
+        : 'No double-NAT ✓')
+      if (state.traceroute.hops.length > 0) {
+        const hopLines = state.traceroute.hops.map(h => {
+          if (h.timeout) return `  Hop ${h.nr}: *`
+          const isPrivate = _isPrivateIP(h.ip)
+          const isISP     = isPrivate && h.hostname && _isISPHostname(h.hostname)
+          const tag       = isISP ? ' [ISP]' : isPrivate ? ' [private]' : ''
+          const host      = h.hostname ? ` (${h.hostname})` : ''
+          return `  Hop ${h.nr}: ${h.ip}${host}${tag}`
+        }).join('\n')
+        lines.push('Hops:\n' + hopLines)
+      }
+    } else {
+      line('Method', 'Automatic (CGNAT via WebRTC)')
+      if (state.doubleNAT === true) {
+        line('Result', 'CGNAT detected ⚠')
+      } else if (state.doubleNAT === false) {
+        line('Result', 'No CGNAT ✓')
+      } else {
+        line('Result', 'Could not be determined')
+      }
+    }
+    sep()
+
+    // ── Calls from console log ──
+    if (state.parsedCalls && state.parsedCalls.length > 0) {
+      title('CALLS (from console log)')
+      state.parsedCalls.forEach((c, i) => {
+        const start   = _parseConsoleTimestamp(c.startTime)
+        const dateStr = start ? start.toLocaleDateString('en-GB') : '?'
+        const timeStr = start ? start.toLocaleTimeString('en-GB') : '?'
+        const durStr  = c.durationSec !== null ? _formatDuration(c.durationSec) : '?'
+        const dir     = c.direction === 'outgoing' ? 'Outgoing' : 'Incoming'
+        const mos     = c.mosAvg !== undefined ? c.mosAvg.toFixed(2) : '?'
+        const num     = c.number ? ` | ${c.number}` : ''
+        lines.push(`Call ${i + 1}: ${dateStr} ${timeStr} | ${dir}${num} | Duration: ${durStr} | MOS: ${mos}`)
+      })
+      const withMOS = state.parsedCalls.filter(c => c.mosAvg !== undefined)
+      if (withMOS.length > 0) {
+        const overall = (withMOS.reduce((s, c) => s + c.mosAvg, 0) / withMOS.length).toFixed(2)
+        line('Average MOS all calls', overall)
+      }
+      sep()
+    }
+
+    // ── Console dump ──
+    if (state.consoleDump) {
+      title('WEBPHONE CONSOLE LOG')
+      lines.push(state.consoleDump)
+      sep()
+    }
+
+    // ── Diagnostic info ──
+    title('DIAGNOSTIC INFO (raw values for support)')
+    line('Browser ping servers', state.pingBasic
+      ? state.pingBasic.servers.map(s => `${s.name}: ${s.avg}ms`).join(', ')
+      : 'none')
+    line('WebRTC computer IP', state.computerIP || 'none')
+    line('Double-NAT raw', state.traceroute
+      ? `traceroute: ${state.traceroute.doubleNAT}`
+      : `WebRTC: ${state.doubleNAT}`)
+    if (state.pingAdvanced) {
+      const jitStr = state.pingAdvanced.jitter !== null ? ` jitter=${state.pingAdvanced.jitter}ms` : ''
+      line('Terminal ping raw', `avg=${state.pingAdvanced.avg} min=${state.pingAdvanced.min} max=${state.pingAdvanced.max} loss=${state.pingAdvanced.loss}%${jitStr}`)
+    }
+
+    return lines.join('\n')
+  }
+
+  function toggleConsoleDump() {
+    const input = document.getElementById('console-dump-input')
+    const btn   = document.getElementById('btn-toggle-console')
+    if (input.classList.contains('d-none')) {
+      input.classList.remove('d-none')
+      btn.textContent = '− Hide'
+    } else {
+      input.classList.add('d-none')
+      btn.textContent = '+ Add'
+    }
+  }
+
+  async function copyReport() {
+    const text = document.getElementById('report-output').value
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch (_) {
+      // Fallback for browsers without clipboard API
+      const ta = document.getElementById('report-output')
+      ta.select()
+      document.execCommand('copy')
+    }
+    console.log('[report] Report copied to clipboard')
+    const fb = document.getElementById('copy-feedback')
+    fb.classList.remove('d-none')
+    setTimeout(() => fb.classList.add('d-none'), 3000)
+  }
+
+  // ── Console log parser ───────────────────────────────────────────────────
+
+  function _parseAndRenderCalls() {
+    state.parsedCalls = state.consoleDump ? _parseConsoleDump(state.consoleDump) : []
+    _renderCallsSummary()
+  }
+
+  function _parseConsoleDump(text) {
+    const sessions = {}
+
+    for (const line of text.split('\n')) {
+      const tsMatch = line.match(/\[(\d{1,2}-\d{1,2}-\d{4},\s*\d{2}:\d{2}:\d{2})\]/)
+      if (!tsMatch) continue
+      const ts      = tsMatch[1]
+      const content = line.slice(tsMatch.index + tsMatch[0].length).trim()
+
+      // Call accepted (outgoing or incoming)
+      const accepted = content.match(/^(outgoing|incoming) session is accepted.*?sessionId:\s*'([^']+)'/)
+      if (accepted) {
+        const [, dir, id] = accepted
+        if (!sessions[id]) sessions[id] = { id }
+        sessions[id].direction = dir
+        sessions[id].startTime = ts
+      }
+
+      // Call terminated
+      const terminated = content.match(/^(outgoing|incoming) call was terminated.*?sessionId:\s*'([^']+)'/)
+      if (terminated) {
+        const [, dir, id] = terminated
+        if (!sessions[id]) sessions[id] = { id }
+        if (!sessions[id].direction) sessions[id].direction = dir
+        sessions[id].endTime = ts
+      }
+
+      // Phone number (caller or called party) — if present in the log
+      const numMatch = content.match(/(?:number|phoneNumber|remoteNumber):\s*'([^']+)'.*?sessionId:\s*'([^']+)'/)
+        || content.match(/sessionId:\s*'([^']+)'.*?(?:number|phoneNumber|remoteNumber):\s*'([^']+)'/)
+      if (numMatch) {
+        const num = numMatch[1].match(/^\+?[\d\s()-]+$/) ? numMatch[1] : null
+        const sid = numMatch[2]
+        if (num && sid && sessions[sid]) sessions[sid].number = num
+      }
+
+      // MOS final stats at call end
+      const mosTerm = content.match(/^MOS stats for terminated (\S+) - average:([\d.]+),\s*highest:([\d.]+),\s*lowest:([\d.]+)/)
+      if (mosTerm) {
+        const [, id, avg, highest, lowest] = mosTerm
+        if (!sessions[id]) sessions[id] = { id }
+        sessions[id].mosAvg     = parseFloat(avg)
+        sessions[id].mosHighest = parseFloat(highest)
+        sessions[id].mosLowest  = parseFloat(lowest)
+      }
+    }
+
+    return Object.values(sessions)
+      .filter(s => s.startTime || s.endTime || s.mosAvg !== undefined)
+      .map(s => {
+        const start = _parseConsoleTimestamp(s.startTime)
+        const end   = _parseConsoleTimestamp(s.endTime)
+        return { ...s, durationSec: (start && end) ? Math.round((end - start) / 1000) : null }
+      })
+      .sort((a, b) => {
+        const ta = _parseConsoleTimestamp(a.startTime || a.endTime) || 0
+        const tb = _parseConsoleTimestamp(b.startTime || b.endTime) || 0
+        return ta - tb
+      })
+  }
+
+  function _parseConsoleTimestamp(ts) {
+    if (!ts) return null
+    const m = ts.match(/(\d{1,2})-(\d{1,2})-(\d{4}),\s*(\d{2}):(\d{2}):(\d{2})/)
+    if (!m) return null
+    return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6])
+  }
+
+  function _formatDuration(seconds) {
+    if (seconds < 60) return `${seconds}s`
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m}m ${s.toString().padStart(2, '0')}s`
+  }
+
+  function _renderCallsSummary() {
+    const el = document.getElementById('console-calls-summary')
+    if (!el) return
+
+    const calls = state.parsedCalls
+    if (!calls || calls.length === 0) { el.innerHTML = ''; return }
+
+    const withMOS    = calls.filter(c => c.mosAvg !== undefined)
+    const overallMOS = withMOS.length > 0
+      ? (withMOS.reduce((s, c) => s + c.mosAvg, 0) / withMOS.length).toFixed(2)
+      : null
+
+    const rows = calls.map(c => {
+      const start    = _parseConsoleTimestamp(c.startTime)
+      const dateStr  = start ? start.toLocaleDateString('en-GB') : '—'
+      const timeStr  = start ? start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'
+      const durStr   = c.durationSec !== null ? _formatDuration(c.durationSec) : '—'
+      const dirIcon  = c.direction === 'outgoing' ? '↗' : c.direction === 'incoming' ? '↙' : '·'
+      const dirLabel = c.direction === 'outgoing' ? 'Outgoing' : c.direction === 'incoming' ? 'Incoming' : '—'
+      const numCell  = c.number ? `<div class="text-muted" style="font-size:0.72rem">${c.number}</div>` : ''
+
+      let mosCell = '<span class="text-muted">—</span>'
+      if (c.mosAvg !== undefined) {
+        const mos      = c.mosAvg.toFixed(2)
+        const mosClass = c.mosAvg >= 4.0 ? 'text-success' : c.mosAvg >= 3.6 ? 'text-warning' : 'text-danger'
+        const mosLabel = c.mosAvg >= 4.0 ? 'Good' : c.mosAvg >= 3.6 ? 'Moderate' : 'Poor'
+        mosCell = `<span class="${mosClass} fw-semibold">${mos}</span> <span class="text-muted" style="font-size:0.72rem">${mosLabel}</span>`
+      }
+
+      return `
+        <tr>
+          <td class="small ps-3">${dateStr}</td>
+          <td class="small">${timeStr}</td>
+          <td class="small">${dirIcon} ${dirLabel}${numCell}</td>
+          <td class="small">${durStr}</td>
+          <td class="small pe-3">${mosCell}</td>
+        </tr>
+      `
+    }).join('')
+
+    el.innerHTML = `
+      <div class="result-card result-secondary p-0 overflow-hidden">
+        <div class="px-3 pt-2 pb-1 d-flex justify-content-between align-items-center border-bottom">
+          <span class="small fw-semibold">${calls.length} call${calls.length !== 1 ? 's' : ''} found</span>
+          ${overallMOS ? `<span class="small text-muted">Avg. MOS: <strong>${overallMOS}</strong></span>` : ''}
+        </div>
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr class="table-light">
+              <th class="small fw-semibold ps-3">Date</th>
+              <th class="small fw-semibold">Time</th>
+              <th class="small fw-semibold">Direction</th>
+              <th class="small fw-semibold">Duration</th>
+              <th class="small fw-semibold pe-3">MOS</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `
+  }
+
+  console.log('[report] Report module loaded')
+  </script>
+
+</body>
+</html>
