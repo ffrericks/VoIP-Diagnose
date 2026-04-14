@@ -1525,8 +1525,13 @@
     const natSource = state.traceroute !== null ? 'traceroute' : 'automatic'
 
     if (natResult === true) {
-      items.push(_diagItem('danger', 'Double-NAT detected',
-        `Your connection passes through two routers each performing NAT. This can cause issues with VoIP. <span class="text-muted">(${natSource})</span>`,
+      const _onSubnet = state.traceroute && _voipDeviceOnSecondHopSubnet()
+      const _caveatIP = state.deviceIP || state.computerIP
+      const _caveat = _onSubnet
+        ? ` The device (${_caveatIP}) is on the subnet of the second router — it may not be affected by double-NAT.`
+        : ''
+      items.push(_diagItem(_onSubnet ? 'warning' : 'danger', 'Double-NAT detected',
+        `Your connection passes through two routers each performing NAT. This can cause issues with VoIP.${_caveat} <span class="text-muted">(${natSource})</span>`,
         ['Set the first router to bridge mode so only the second router performs NAT',
          'Ask your internet provider if the modem/ONT can be set to bridge mode',
          'Contact Voys support — they can help determine the correct setting']))
@@ -1616,6 +1621,20 @@
     const secondSubnet = privateHops[1].ip.split('.').slice(0, 3).join('.')
     const deviceSubnet = state.deviceIP.split('.').slice(0, 3).join('.')
     return secondSubnet === deviceSubnet
+  }
+
+  function _voipDeviceOnSecondHopSubnet() {
+    // Use the device IP if available (deskphone / DECT),
+    // otherwise fall back to the computer IP (webphone = device and computer are the same).
+    // Only check the 2nd hop: being on the 2nd (inner) router's subnet means the device may not be affected.
+    // Being on the 1st hop subnet means the device is BETWEEN the two routers — that IS double-NAT.
+    const relevantIP = state.deviceIP || state.computerIP
+    if (!relevantIP || !state.traceroute) return false
+    const { privateHops } = state.traceroute
+    if (!privateHops || privateHops.length < 2) return false
+    const secondHopSubnet = privateHops[1].ip.split('.').slice(0, 3).join('.')
+    const relevantSubnet  = relevantIP.split('.').slice(0, 3).join('.')
+    return secondHopSubnet === relevantSubnet
   }
 
   function _diagItem(type, title, description, tips) {
