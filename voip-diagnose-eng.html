@@ -1801,9 +1801,8 @@
 
     // ── Console dump ──
     if (state.consoleDump) {
-      lines.push('WEBPHONE CONSOLE LOG START')
-      lines.push(state.consoleDump)
-      lines.push('WEBPHONE CONSOLE LOG END')
+      title('WEBPHONE CONSOLE LOG')
+      lines.push(_insertCallMarkersInLog(state.consoleDump, state.parsedCalls))
       sep()
     }
 
@@ -1853,6 +1852,31 @@
   }
 
   // ── Console log parser ───────────────────────────────────────────────────
+
+  function _insertCallMarkersInLog(rawLog, calls) {
+    if (!calls || calls.length === 0) return rawLog
+
+    const logLines = rawLog.split('\n')
+    const insertBefore = {}  // lineIndex → marker text
+    const insertAfter  = {}  // lineIndex → marker text
+
+    calls.forEach((c, i) => {
+      if (!c.id) return
+      const label = `CALL ${i + 1}`
+      logLines.forEach((line, idx) => {
+        if (line.includes(c.id) && /session is accepted/.test(line))  insertBefore[idx] = `--- ${label} START ---`
+        if (line.includes(c.id) && /call was terminated/.test(line))  insertAfter[idx]  = `--- ${label} END ---`
+      })
+    })
+
+    const result = []
+    logLines.forEach((line, idx) => {
+      if (insertBefore[idx]) result.push(insertBefore[idx])
+      result.push(line)
+      if (insertAfter[idx])  result.push(insertAfter[idx])
+    })
+    return result.join('\n')
+  }
 
   function _parseAndRenderCalls() {
     state.parsedCalls = state.consoleDump ? _parseConsoleDump(state.consoleDump) : []
