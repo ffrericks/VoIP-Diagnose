@@ -1789,9 +1789,7 @@
         const dir     = c.direction === 'outgoing' ? 'Uitgaand' : 'Inkomend'
         const mos     = c.mosAvg !== undefined ? c.mosAvg.toFixed(2) : '?'
         const num     = c.number ? ` | ${c.number}` : ''
-        lines.push(`WEBPHONE CONSOLE LOG CALL ${i + 1} START`)
         lines.push(`Gesprek ${i + 1}: ${dateStr} ${timeStr} | ${dir}${num} | Duur: ${durStr} | MOS: ${mos}`)
-        lines.push(`WEBPHONE CONSOLE LOG CALL ${i + 1} END`)
       })
       const withMOS = state.parsedCalls.filter(c => c.mosAvg !== undefined)
       if (withMOS.length > 0) {
@@ -1803,8 +1801,9 @@
 
     // ── Console dump ──
     if (state.consoleDump) {
-      title('WEBPHONE CONSOLE LOG')
+      lines.push('WEBPHONE CONSOLE LOG START')
       lines.push(state.consoleDump)
+      lines.push('WEBPHONE CONSOLE LOG END')
       sep()
     }
 
