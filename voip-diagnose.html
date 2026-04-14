@@ -317,9 +317,9 @@
                     <span class="text-muted fw-normal small ms-1">optioneel</span>
                   </h3>
                   <button id="btn-toggle-console" class="btn btn-outline-secondary btn-sm"
-                          onclick="toggleConsoleDump()">+ Toevoegen</button>
+                          onclick="toggleConsoleDump()">− Verbergen</button>
                 </div>
-                <div id="console-dump-input" class="d-none">
+                <div id="console-dump-input">
                   <div class="alert alert-primary p-3 mb-3">
                     <p class="fw-semibold small mb-2">Zo haalt u de console log op:</p>
                     <ol class="small mb-0 ps-3">
@@ -359,8 +359,8 @@
               <h2 class="h5 fw-semibold mb-1">Netwerk analyse</h2>
               <p class="text-muted small mb-4">De automatische tests starten direct.</p>
 
-              <!-- Handmatig computer IP (verschijnt als WebRTC faalt) -->
-              <div id="manual-ip-section" class="mb-4">
+              <!-- Handmatig computer IP (alleen vast/DECT) -->
+              <div id="manual-ip-section" class="mb-4 d-none">
                 <div class="alert alert-primary p-3">
                   <p class="fw-semibold small mb-2">IP-adres van deze computer</p>
                   <p class="small mb-2">Voer het volgende commando in een terminalvenster in om uw IP-adres te vinden:</p>
@@ -827,10 +827,9 @@
 
     // Subnet sectie en IP-invoer alleen tonen voor vast/DECT
     if (state.deviceType === 'deskphone') {
+      _show('manual-ip-section')
       document.getElementById('subnet-section').classList.remove('d-none')
       _setResult('subnet-result', 'loading', 'Subnet check loopt...')
-    } else {
-      _hide('manual-ip-section')
     }
 
     _setResult('ping-basic-result', 'loading', 'Meting loopt...')
