@@ -386,10 +386,16 @@
 
               <!-- Browser ping (runs automatically in background) -->
               <div class="mb-4">
-                <h3 class="h6 fw-semibold mb-2">
-                  Connection speed
-                  <span class="text-muted fw-normal small ms-1">automatic</span>
-                </h3>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h3 class="h6 fw-semibold mb-0">
+                    Connection speed
+                    <span class="text-muted fw-normal small ms-1">automatic</span>
+                  </h3>
+                  <button class="btn btn-link btn-sm text-muted p-0"
+                          onclick="_setResult('ping-basic-result', 'loading', 'Measuring...'); runBrowserPing()"
+                          title="Re-run test"
+                          style="font-size:1.1rem; line-height:1">↻</button>
+                </div>
                 <div id="ping-basic-result"></div>
               </div>
 
@@ -450,7 +456,7 @@
 
                 <!-- Automatic CGNAT check -->
                 <div class="mb-2">
-                  <span class="text-muted small">Automatic (CGNAT)</span>
+                  <span class="text-muted small">Automatic (CGNAT) <span class="fw-normal" style="opacity:0.7">(inaccurate)</span></span>
                   <div id="double-nat-result" class="mt-1"></div>
                 </div>
 
@@ -555,6 +561,11 @@
               <div id="copy-feedback" class="text-center text-success small mt-2 d-none">
                 ✓ Copied to clipboard
               </div>
+
+              <p class="text-muted small mt-3 mb-0">
+                This report contains network and device information. Only share it at the request of support.<br>
+                Experiencing issues? Contact support.
+              </p>
 
             </div>
           </div>
