@@ -918,7 +918,10 @@
     const rows = servers.map(s => {
       const latType   = s.avg    < 50 ? 'success' : s.avg    < 100 ? 'warning' : 'danger'
       const jitType   = s.jitter < 10 ? 'success' : s.jitter <  30 ? 'warning' : 'danger'
-      const dot       = `<span class="badge bg-${latType === 'success' ? 'success' : latType === 'warning' ? 'warning' : 'danger'} rounded-circle p-1 me-2" style="width:8px;height:8px;display:inline-block;vertical-align:middle"></span>`
+      const dotType   = (s.avg < 100 && (s.jitter === null || s.jitter < 20)) ? 'success'
+                      : (s.avg >= 100 || (s.jitter !== null && s.jitter >= 50)) ? 'danger'
+                      : 'warning'
+      const dot       = `<span class="badge bg-${dotType} rounded-circle p-1 me-2" style="width:8px;height:8px;display:inline-block;vertical-align:middle"></span>`
       const jitCell   = s.jitter !== null
         ? `<span class="text-${jitType === 'success' ? 'success' : jitType === 'warning' ? 'warning' : 'danger'} fw-semibold">${s.jitter} ms</span>`
         : `<span class="text-muted">—</span>`
