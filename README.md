@@ -12,6 +12,7 @@ A browser-based wizard that guides users through a network analysis for VoIP tro
 | `voip-diagnose-eng.html` | English | International customers and support | — |
 | `voip-diagnose-sa.html` | English | Voys South Africa customers | SA-specific endpoints |
 | `diagnose-nor.html` | Dutch | Voys Netherlands — no report variant | Skips step 4; manual checks note shown as result card |
+| `voip-diagnose-ger.html` | German | Voys Germany customers | DE-specific endpoints |
 
 Each file is a single self-contained HTML file that can be opened directly in a browser or hosted on any static web server.
 
@@ -22,6 +23,14 @@ Each file is a single self-contained HTML file that can be opened directly in a 
 | `ha.voys.nl` | `sip.voys.co.za` |
 | `www.osso.nl` | `clientzone.afrihost.com` |
 | `websocket.voipgrid.nl` | `websocket.voys.co.za` |
+
+**Germany** (`voip-diagnose-ger.html`) uses DE-specific endpoints instead of the Netherlands equivalents:
+
+| Original | Germany |
+|----------|---------|
+| `ha.voys.nl` | `ha.voys.de` |
+| `www.osso.nl` | `www.vodafone.de` |
+| `websocket.voipgrid.nl` | `websocket.voipgrid.nl` (same) |
 
 **No report** (`diagnose-nor.html`) is a Dutch variant that skips step 4. The note about incomplete manual checks is displayed as an orange result card instead of a subtle text line.
 
