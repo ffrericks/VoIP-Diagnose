@@ -1615,6 +1615,14 @@
       }
     }
 
+    // ── SIP ALG hint (desk phone only, only when all tests pass) ──
+    if (state.deviceType === 'deskphone' && issues.length === 0 && state.sipOptions && state.sipOptions.status === 'ok') {
+      items.push(_diagItem('secondary', 'SIP ALG — note for desk phones',
+        'All tests passed. If you are still experiencing issues with your desk phone, check whether SIP ALG is disabled on your router — it is enabled by default on many routers and can cause problems with desk phones.',
+        ['Log in to your router and look for "SIP ALG" or "SIP helper" in the firewall or NAT settings',
+         'Disable SIP ALG if it is enabled']))
+    }
+
     // ── All good ──
     if (issues.length === 0 && items.length > 0) {
       items.unshift(_diagItem('success', 'All tests passed',
@@ -1664,8 +1672,9 @@
   }
 
   function _diagItem(type, title, description, tips) {
-    const icons = { success: '✓', warning: '⚠', danger: '✕' }
+    const icons = { success: '✓', warning: '⚠', danger: '✕', secondary: 'ℹ' }
     const colors = {
+      secondary: 'result-secondary',
       success: 'result-success',
       warning: 'result-warning',
       danger:  'result-danger'

@@ -399,6 +399,21 @@
                 <div id="ping-basic-result"></div>
               </div>
 
+              <!-- SIP verbindingstest -->
+              <div class="mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h3 class="h6 fw-semibold mb-0">
+                    SIP verbindingstest
+                    <span class="text-muted fw-normal small ms-1">automatisch</span>
+                  </h3>
+                  <button class="btn btn-link btn-sm text-muted p-0"
+                          onclick="_setResult('sip-options-result', 'loading', 'Verbinding testen...'); runSIPOptionsTest()"
+                          title="Opnieuw testen"
+                          style="font-size:1.1rem; line-height:1">↻</button>
+                </div>
+                <div id="sip-options-result"></div>
+              </div>
+
               <!-- Terminal ping (optioneel) -->
               <div class="mb-4">
                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -607,6 +622,7 @@
     latency: null,          // { avg, min, max, samples: [] } in ms
     doubleNAT: null,        // true | false | 'unknown' (CGNAT via WebRTC)
     traceroute: null,       // { hops: [{nr, ip, times}], doubleNAT: true|false, privateHops: [] }
+    sipOptions: null,       // { status: 'ok'|'timeout'|'error'|'closed', connectMs, rtt, code, codeText }
 
     // Stap 4 — rapport
     consoleDump: null,      // optionele tekst van gebruiker (webphone console export)
@@ -852,10 +868,12 @@
     }
 
     _setResult('ping-basic-result', 'loading', 'Meting loopt...')
+    _setResult('sip-options-result', 'loading', 'Verbinding testen...')
     _setResult('double-nat-result', 'loading', 'Detectie loopt...')
 
     // Start tests parallel
     runBrowserPing()
+    runSIPOptionsTest()
     runWebRTCDetection()
   }
 
@@ -955,6 +973,138 @@
         </div>
       </div>
     `
+  }
+
+  // ── SIP OPTIONS test ─────────────────────────────────────────────────────
+
+  function runSIPOptionsTest() {
+    const WS_URL = 'wss://websocket.voipgrid.nl'
+
+    return new Promise((resolve) => {
+      const connectStart = performance.now()
+      let sendTime       = null
+      let settled        = false
+      let ws
+
+      const done = (type, labelHtml, noteHtml) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeout)
+        try { ws && ws.close() } catch (_) {}
+
+        if (type === 'success' || type === 'warning') {
+          document.getElementById('sip-options-result').innerHTML = `
+            <div class="result-card result-${type}">
+              ${labelHtml}
+              ${noteHtml}
+            </div>
+          `
+        } else {
+          document.getElementById('sip-options-result').innerHTML = `
+            <div class="result-card result-${type}">
+              ${labelHtml}
+              ${noteHtml}
+            </div>
+          `
+        }
+        resolve()
+      }
+
+      const timeout = setTimeout(() => {
+        console.warn('[network] SIP OPTIONS timeout na 8s')
+        state.sipOptions = { status: 'timeout', connectMs: null, rtt: null }
+        done('danger',
+          '<span class="result-label">Verbindingsprobleem ✗</span><div class="result-value">Server reageert niet binnen 8 seconden</div>',
+          '<div class="result-note">Mogelijke oorzaak: firewall blokkeert WSS (poort 443) of de verbinding wordt stilzwijgend verbroken</div>'
+        )
+      }, 8000)
+
+      try {
+        ws = new WebSocket(WS_URL, ['sip'])
+      } catch (e) {
+        console.error('[network] SIP WebSocket aanmaken mislukt:', e.message)
+        state.sipOptions = { status: 'error', connectMs: null, rtt: null }
+        done('danger',
+          '<span class="result-label">Verbindingsprobleem ✗</span><div class="result-value">Kan geen WebSocket verbinding openen</div>',
+          '<div class="result-note">Mogelijke oorzaak: firewall blokkeert WSS verbindingen</div>'
+        )
+        return
+      }
+
+      ws.onopen = () => {
+        const connectMs = Math.round(performance.now() - connectStart)
+        console.log(`[network] SIP WebSocket verbonden in ${connectMs}ms`)
+
+        const branch = 'z9hG4bK' + Math.random().toString(36).substr(2, 8)
+        const callId = 'diagnose-' + Math.random().toString(36).substr(2, 12)
+        const sipOptions = [
+          'OPTIONS sip:websocket.voipgrid.nl SIP/2.0',
+          `Via: SIP/2.0/WSS voip-diagnose.local;branch=${branch}`,
+          `From: <sip:diagnose@voip-diagnose.local>;tag=${Date.now()}`,
+          'To: <sip:websocket.voipgrid.nl>',
+          `Call-ID: ${callId}`,
+          'CSeq: 1 OPTIONS',
+          'Max-Forwards: 70',
+          'User-Agent: VoysDiagnose/1.0',
+          'Content-Length: 0',
+          '',
+          ''
+        ].join('\r\n')
+
+        sendTime = performance.now()
+        ws.send(sipOptions)
+        console.log('[network] SIP OPTIONS verstuurd')
+      }
+
+      ws.onmessage = (event) => {
+        const rtt        = Math.round(performance.now() - sendTime)
+        const connectMs  = Math.round(sendTime - connectStart)
+        const firstLine  = (event.data + '').split(/\r?\n/)[0]
+        const match      = firstLine.match(/SIP\/2\.0\s+(\d+)\s*(.*)/)
+        const code       = match ? +match[1] : null
+        const codeText   = match ? match[2].trim() : firstLine
+
+        console.log(`[network] SIP respons: ${firstLine} | RTT: ${rtt}ms | verbinding: ${connectMs}ms`)
+
+        const type      = (code && code < 400) ? 'success' : 'warning'
+        const rttType   = rtt < 100 ? 'text-success' : rtt < 200 ? 'text-warning' : 'text-danger'
+
+        state.sipOptions = { status: 'ok', code, codeText, connectMs, rtt }
+
+        done(type,
+          `<div class="d-flex justify-content-between align-items-start">
+            <div>
+              <span class="result-label">${code ? code + ' ' + codeText : 'Verbinding OK'}</span>
+              <div class="result-value"><span class="${rttType} fw-semibold">${rtt} ms</span> reactietijd</div>
+            </div>
+            <div class="text-end text-muted small">
+              <div>Verbinding: ${connectMs} ms</div>
+            </div>
+          </div>`,
+          '<div class="result-note">SIP OPTIONS via WebSocket</div>'
+        )
+      }
+
+      ws.onerror = () => {
+        console.error('[network] SIP WebSocket verbindingsfout')
+        state.sipOptions = { status: 'error', connectMs: null, rtt: null }
+        done('danger',
+          '<span class="result-label">Verbindingsprobleem ✗</span><div class="result-value">Kan geen WebSocket verbinding openen</div>',
+          '<div class="result-note">Mogelijke oorzaak: firewall blokkeert WSS verbindingen</div>'
+        )
+      }
+
+      ws.onclose = (event) => {
+        if (!settled) {
+          console.warn('[network] SIP WebSocket gesloten zonder respons, code:', event.code, event.reason)
+          state.sipOptions = { status: 'closed', closeCode: event.code, connectMs: null, rtt: null }
+          done('danger',
+            `<span class="result-label">Verbindingsprobleem ✗</span><div class="result-value">Verbinding verbroken vóór respons (code ${event.code})</div>`,
+            '<div class="result-note">Mogelijke oorzaak: firewall blokkeert de verbinding of server accepteert geen SIP over WebSocket</div>'
+          )
+        }
+      }
+    })
   }
 
   // ── WebRTC detectie ───────────────────────────────────────────────────────
@@ -1615,6 +1765,14 @@
       }
     }
 
+    // ── SIP ALG hint (alleen vast toestel, alleen als alle tests goed zijn) ──
+    if (state.deviceType === 'deskphone' && issues.length === 0 && state.sipOptions && state.sipOptions.status === 'ok') {
+      items.push(_diagItem('secondary', 'SIP ALG — let op bij problemen',
+        'De verbindingstest is geslaagd. Ervaart u toch problemen met uw vaste toestel, controleer dan of SIP ALG uitstaat op uw router — dit staat bij veel routers standaard aan en kan problemen veroorzaken bij vaste toestellen.',
+        ['Log in op uw router en zoek naar "SIP ALG" of "SIP helper" in de firewall- of NAT-instellingen',
+         'Zet SIP ALG uit als dit aan staat']))
+    }
+
     // ── Alles goed ──
     if (issues.length === 0 && items.length > 0) {
       items.unshift(_diagItem('success', 'Alle tests geslaagd',
@@ -1664,11 +1822,12 @@
   }
 
   function _diagItem(type, title, description, tips) {
-    const icons = { success: '✓', warning: '⚠', danger: '✕' }
+    const icons = { success: '✓', warning: '⚠', danger: '✕', secondary: 'ℹ' }
     const colors = {
-      success: 'result-success',
-      warning: 'result-warning',
-      danger:  'result-danger'
+      success:   'result-success',
+      warning:   'result-warning',
+      danger:    'result-danger',
+      secondary: 'result-secondary'
     }
     const tipsHtml = tips.length > 0
       ? `<ul class="mb-0 mt-2 ps-3 small">${tips.map(t => `<li class="mb-1">${t}</li>`).join('')}</ul>`
@@ -1832,6 +1991,28 @@
     }
 
     // ── Diagnose-info ──
+    // ── SIP OPTIONS ──
+    title('SIP VERBINDINGSTEST (via WebSocket)')
+    if (state.sipOptions) {
+      const s = state.sipOptions
+      if (s.status === 'ok') {
+        line('Resultaat', s.code ? `${s.code} ${s.codeText}` : 'OK')
+        line('Reactietijd', s.rtt + ' ms')
+        line('Verbindingstijd', s.connectMs + ' ms')
+      } else if (s.status === 'timeout') {
+        line('Resultaat', 'Geen reactie — timeout na 8 seconden')
+        line('Mogelijke oorzaak', 'Firewall blokkeert WSS (poort 443)')
+      } else if (s.status === 'error') {
+        line('Resultaat', 'Verbinding mislukt')
+        line('Mogelijke oorzaak', 'Firewall blokkeert WSS verbindingen')
+      } else if (s.status === 'closed') {
+        line('Resultaat', `Verbinding verbroken (code ${s.closeCode})`)
+        line('Mogelijke oorzaak', 'Firewall blokkeert de verbinding of server accepteert geen SIP over WebSocket')
+      }
+    } else {
+      line('Resultaat', 'Niet uitgevoerd')
+    }
+
     title('DIAGNOSE-INFO (ruwe waarden voor support)')
     line('Browser ping servers', state.pingBasic
       ? state.pingBasic.servers.map(s => `${s.name}: ${s.avg}ms`).join(', ')

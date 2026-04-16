@@ -33,7 +33,7 @@ The tool walks through four steps:
 
 1. **Device type** — Webphone (browser/app) or desk phone/DECT handset
 2. **Device details** — Brand, model, IP address (desk phones only)
-3. **Network analysis** — Automatic and optional manual tests
+3. **Network analysis** — Automatic and optional manual tests, including a SIP connectivity test over WebSocket
 4. **Report** — A plain-text summary ready to paste into a support ticket
 
 For webphone users, an optional console log can be added to the report. The tool automatically parses it for individual calls and displays a summary table with call direction, duration, and MOS score per call.
@@ -77,6 +77,21 @@ The tool calculates jitter as the standard deviation of individual ping reply ti
 The traceroute result takes priority over the WebRTC result when both are available.
 
 **Why not Google STUN?** `stun.l.google.com` is the most common STUN server used in examples. For a Voys-branded tool, using a Google endpoint raises privacy concerns (Google logs STUN requests). The tool uses `stun.cloudflare.com:3478` instead, which has a clear privacy policy and no data retention for STUN traffic.
+
+### SIP connectivity test — what it measures and what it cannot
+
+The tool opens a WebSocket connection to `wss://websocket.voipgrid.nl` (or the SA equivalent) and sends a SIP OPTIONS request. This measures two values separately:
+
+- **Connection time** — TCP + TLS + WebSocket handshake (how long before any data can be sent)
+- **Response time (RTT)** — round-trip of the SIP OPTIONS request once the connection is open
+
+A failed test (timeout, error, or connection closed before response) suggests a firewall is blocking WSS connections.
+
+**What the SIP test cannot detect — SIP ALG**
+
+SIP ALG is a router feature that inspects and rewrites unencrypted SIP traffic on UDP port 5060. Because this test uses WSS (TLS-encrypted WebSocket), the router cannot inspect it. The SIP test will pass even when SIP ALG is active.
+
+For this reason, the tool shows a SIP ALG note in the diagnosis when the device type is a desk phone or DECT and all other tests pass: desk phones use UDP SIP and are affected by SIP ALG, while webphones use WSS and are not.
 
 ### WebRTC for IP detection — why it often fails
 
