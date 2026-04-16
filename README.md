@@ -6,15 +6,24 @@ A browser-based wizard that guides users through a network analysis for VoIP tro
 
 ## Versions
 
-| File | Language | Audience |
-|------|----------|----------|
-| `voip-diagnose.html` | Dutch | Voys customers in the Netherlands |
-| `voip-diagnose-eng.html` | English | International customers and support |
-| `voip-diagnose-sa.html` | English | Voys South Africa customers |
+| File | Language | Audience | Notes |
+|------|----------|----------|-------|
+| `voip-diagnose.html` | Dutch | Voys Netherlands customers | — |
+| `voip-diagnose-eng.html` | English | International customers and support | — |
+| `voip-diagnose-sa.html` | English | Voys South Africa customers | SA-specific endpoints |
+| `diagnose-nor.html` | Dutch | Voys Netherlands — no report variant | Skips step 4; manual checks note shown as result card |
 
-All files are identical in functionality. Each is a single self-contained HTML file that can be opened directly in a browser or hosted on any static web server.
+Each file is a single self-contained HTML file that can be opened directly in a browser or hosted on any static web server.
 
-The South Africa version uses SA-specific endpoints: `sip.voys.co.za` (ping target) and `clientzone.afrihost.com` (secondary latency check) instead of the Netherlands equivalents.
+**South Africa** (`voip-diagnose-sa.html`) uses SA-specific endpoints instead of the Netherlands equivalents:
+
+| Original | South Africa |
+|----------|-------------|
+| `ha.voys.nl` | `sip.voys.co.za` |
+| `www.osso.nl` | `clientzone.afrihost.com` |
+| `websocket.voipgrid.nl` | `websocket.voys.co.za` |
+
+**No report** (`diagnose-nor.html`) is a Dutch variant that skips step 4. The note about incomplete manual checks is displayed as an orange result card instead of a subtle text line.
 
 ---
 
