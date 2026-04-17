@@ -237,6 +237,7 @@
                   <option value="snom">Snom</option>
                   <option value="grandstream">Grandstream</option>
                   <option value="cisco">Cisco SPA</option>
+                  <option value="fanvil">Fanvil</option>
                   <option value="other">Overig</option>
                 </select>
               </div>
@@ -325,7 +326,7 @@
                     <p class="fw-semibold small mb-2">Zo haalt u de console log op:</p>
                     <ol class="small mb-0 ps-3">
                       <li class="mb-1">Open de webphone</li>
-                      <li class="mb-1">Druk op <strong>F12</strong> om de ontwikkelaarstools te openen</li>
+                      <li class="mb-1">Druk op <strong>F12</strong> om de ontwikkelaarstools te openen — of <strong>rechtsklik</strong> in de webphone en kies <strong>Inspecteren</strong></li>
                       <li class="mb-1">Klik op het tabblad <strong>Console</strong></li>
                       <li class="mb-1">Klik op het <strong>verbod-icoon</strong> (🚫) of het prullenbak-icoon om de console te legen</li>
                       <li class="mb-1">Doe een <strong>testgesprek</strong> of voer de actie uit die het probleem veroorzaakt</li>
@@ -572,7 +573,7 @@
     deviceType: null,       // 'webphone' | 'deskphone'
 
     // Stap 2A (alleen vast/DECT)
-    brand: null,            // 'yealink' | 'gigaset' | 'snom' | 'grandstream' | 'cisco' | 'other'
+    brand: null,            // 'yealink' | 'gigaset' | 'snom' | 'grandstream' | 'cisco' | 'fanvil' | 'other'
     modelType: null,        // 'Vast toestel' | 'DECT basisstation' (alleen relevant voor Yealink)
     model: null,            // vrije tekst, ingevuld door gebruiker
     deviceIP: null,         // ingevuld door gebruiker (bijv. '192.168.1.100')
@@ -700,6 +701,17 @@
         'Vast toestel': [
           'Druk op de <strong>Menu-knop</strong> (blaadje-icoon)',
           'Druk op toets <strong>9</strong>'
+        ]
+      }
+    },
+    fanvil: {
+      name: 'Fanvil',
+      hasModelTypes: false,
+      defaultType: 'Vast toestel',
+      steps: {
+        'Vast toestel': [
+          'Druk op <strong>Menu</strong>',
+          'Ga naar <strong>Status → Netwerk → IPv4</strong>'
         ]
       }
     },
@@ -1828,7 +1840,7 @@
       if (state.brand) {
         const brandNames = {
           yealink: 'Yealink', gigaset: 'Gigaset', snom: 'Snom',
-          grandstream: 'Grandstream', cisco: 'Cisco SPA', other: 'Overig'
+          grandstream: 'Grandstream', cisco: 'Cisco SPA', fanvil: 'Fanvil', other: 'Overig'
         }
         line('Merk', brandNames[state.brand] || state.brand)
       }

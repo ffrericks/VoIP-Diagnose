@@ -237,6 +237,7 @@
                   <option value="snom">Snom</option>
                   <option value="grandstream">Grandstream</option>
                   <option value="cisco">Cisco SPA</option>
+                  <option value="fanvil">Fanvil</option>
                   <option value="other">Sonstiges</option>
                 </select>
               </div>
@@ -325,7 +326,7 @@
                     <p class="fw-semibold small mb-2">So erhalten Sie das Konsolenprotokoll:</p>
                     <ol class="small mb-0 ps-3">
                       <li class="mb-1">Das Webphone öffnen</li>
-                      <li class="mb-1"><strong>F12</strong> drücken, um die Entwicklertools zu öffnen</li>
+                      <li class="mb-1"><strong>F12</strong> drücken, um die Entwicklertools zu öffnen — oder mit der <strong>rechten Maustaste</strong> in die Webphone klicken und <strong>Untersuchen</strong> wählen</li>
                       <li class="mb-1">Auf den Tab <strong>Konsole</strong> klicken</li>
                       <li class="mb-1">Das <strong>Löschen-Symbol</strong> (🚫) oder das Papierkorb-Symbol klicken, um die Konsole zu leeren</li>
                       <li class="mb-1">Einen <strong>Testanruf</strong> tätigen oder die Aktion ausführen, die das Problem verursacht</li>
@@ -397,6 +398,21 @@
                           style="font-size:1.1rem; line-height:1">↻</button>
                 </div>
                 <div id="ping-basic-result"></div>
+              </div>
+
+              <!-- SIP-Verbindungstest -->
+              <div class="mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h3 class="h6 fw-semibold mb-0">
+                    SIP-Verbindungstest
+                    <span class="text-muted fw-normal small ms-1">automatisch</span>
+                  </h3>
+                  <button class="btn btn-link btn-sm text-muted p-0"
+                          onclick="_setResult('sip-options-result', 'loading', 'Verbindung wird getestet...'); runSIPOptionsTest()"
+                          title="Test erneut ausführen"
+                          style="font-size:1.1rem; line-height:1">↻</button>
+                </div>
+                <div id="sip-options-result"></div>
               </div>
 
               <!-- Terminal ping (optional) -->
@@ -594,7 +610,7 @@
     deviceType: null,       // 'webphone' | 'deskphone'
 
     // Step 2A (desk phone / DECT only)
-    brand: null,            // 'yealink' | 'gigaset' | 'snom' | 'grandstream' | 'cisco' | 'other'
+    brand: null,            // 'yealink' | 'gigaset' | 'snom' | 'grandstream' | 'cisco' | 'fanvil' | 'other'
     modelType: null,        // 'Tischtelefon' | 'DECT-Basisstation' | 'DECT' (relevant for Yealink/Gigaset)
     model: null,            // free text, entered by user
     deviceIP: null,         // entered by user (e.g. '192.168.1.100')
@@ -721,6 +737,17 @@
         'Tischtelefon': [
           'Die <strong>Menütaste</strong> (Seitensymbol) drücken',
           'Taste <strong>9</strong> drücken'
+        ]
+      }
+    },
+    fanvil: {
+      name: 'Fanvil',
+      hasModelTypes: false,
+      defaultType: 'Tischtelefon',
+      steps: {
+        'Tischtelefon': [
+          '<strong>Menü</strong> drücken',
+          'Zu <strong>Status → Netzwerk → IPv4</strong> navigieren'
         ]
       }
     },
@@ -852,10 +879,12 @@
     }
 
     _setResult('ping-basic-result', 'loading', 'Messung läuft...')
+    _setResult('sip-options-result', 'loading', 'Verbindung wird getestet...')
     _setResult('double-nat-result', 'loading', 'Wird erkannt...')
 
     // Start tests in parallel
     runBrowserPing()
+    runSIPOptionsTest()
     runWebRTCDetection()
   }
 
@@ -955,6 +984,129 @@
         </div>
       </div>
     `
+  }
+
+  // ── SIP OPTIONS test ─────────────────────────────────────────────────────
+
+  function runSIPOptionsTest() {
+    const WS_URL = 'wss://websocket.voipgrid.nl'
+
+    return new Promise((resolve) => {
+      const connectStart = performance.now()
+      let sendTime       = null
+      let settled        = false
+      let ws
+
+      const done = (type, labelHtml, noteHtml) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeout)
+        try { ws && ws.close() } catch (_) {}
+
+        document.getElementById('sip-options-result').innerHTML = `
+          <div class="result-card result-${type}">
+            ${labelHtml}
+            ${noteHtml}
+          </div>
+        `
+        resolve()
+      }
+
+      const timeout = setTimeout(() => {
+        console.warn('[network] SIP OPTIONS Timeout nach 8s')
+        state.sipOptions = { status: 'timeout', connectMs: null, rtt: null }
+        done('danger',
+          '<span class="result-label">Verbindungsproblem ✗</span><div class="result-value">Server hat nicht innerhalb von 8 Sekunden geantwortet</div>',
+          '<div class="result-note">Mögliche Ursache: Firewall blockiert WSS (Port 443) oder die Verbindung wird still getrennt</div>'
+        )
+      }, 8000)
+
+      try {
+        ws = new WebSocket(WS_URL, ['sip'])
+      } catch (e) {
+        console.error('[network] SIP WebSocket konnte nicht erstellt werden:', e.message)
+        state.sipOptions = { status: 'error', connectMs: null, rtt: null }
+        done('danger',
+          '<span class="result-label">Verbindungsproblem ✗</span><div class="result-value">WebSocket-Verbindung konnte nicht geöffnet werden</div>',
+          '<div class="result-note">Mögliche Ursache: Firewall blockiert WSS-Verbindungen</div>'
+        )
+        return
+      }
+
+      ws.onopen = () => {
+        const connectMs = Math.round(performance.now() - connectStart)
+        console.log(`[network] SIP WebSocket verbunden in ${connectMs}ms`)
+
+        const branch = 'z9hG4bK' + Math.random().toString(36).substr(2, 8)
+        const callId = 'diagnose-' + Math.random().toString(36).substr(2, 12)
+        const sipOptions = [
+          'OPTIONS sip:websocket.voipgrid.nl SIP/2.0',
+          `Via: SIP/2.0/WSS voip-diagnose.local;branch=${branch}`,
+          `From: <sip:diagnose@voip-diagnose.local>;tag=${Date.now()}`,
+          'To: <sip:websocket.voipgrid.nl>',
+          `Call-ID: ${callId}`,
+          'CSeq: 1 OPTIONS',
+          'Max-Forwards: 70',
+          'User-Agent: VoysDiagnose/1.0',
+          'Content-Length: 0',
+          '',
+          ''
+        ].join('\r\n')
+
+        sendTime = performance.now()
+        ws.send(sipOptions)
+        console.log('[network] SIP OPTIONS gesendet')
+      }
+
+      ws.onmessage = (event) => {
+        const rtt        = Math.round(performance.now() - sendTime)
+        const connectMs  = Math.round(sendTime - connectStart)
+        const firstLine  = (event.data + '').split(/\r?\n/)[0]
+        const match      = firstLine.match(/SIP\/2\.0\s+(\d+)\s*(.*)/)
+        const code       = match ? +match[1] : null
+        const codeText   = match ? match[2].trim() : firstLine
+
+        console.log(`[network] SIP-Antwort: ${firstLine} | RTT: ${rtt}ms | Verbindung: ${connectMs}ms`)
+
+        const type      = (code && code < 400) ? 'success' : 'warning'
+        const rttType   = rtt < 100 ? 'text-success' : rtt < 200 ? 'text-warning' : 'text-danger'
+
+        state.sipOptions = { status: 'ok', code, codeText, connectMs, rtt }
+
+        done(type,
+          `<div class="d-flex justify-content-between align-items-start">
+            <div>
+              <span class="result-label">${code ? code + ' ' + codeText : 'Verbindung OK'}</span>
+              <div class="result-value"><span class="${rttType} fw-semibold">${rtt} ms</span> Antwortzeit</div>
+            </div>
+            <div class="text-end text-muted small">
+              <div>Verbindungsaufbau: ${connectMs} ms</div>
+            </div>
+          </div>`,
+          '<div class="result-note">SIP OPTIONS via WebSocket</div>'
+        )
+      }
+
+      ws.onerror = () => {
+        console.error('[network] SIP WebSocket Verbindungsfehler')
+        state.sipOptions = { status: 'error', connectMs: null, rtt: null }
+        done('danger',
+          '<span class="result-label">Verbindungsproblem ✗</span><div class="result-value">WebSocket-Verbindung konnte nicht geöffnet werden</div>',
+          '<div class="result-note">Mögliche Ursache: Firewall blockiert WSS-Verbindungen</div>'
+        )
+      }
+
+      ws.onclose = (event) => {
+        if (!settled) {
+          console.warn('[network] SIP WebSocket ohne Antwort geschlossen, Code:', event.code, event.reason)
+          state.sipOptions = { status: 'closed', closeCode: event.code, connectMs: null, rtt: null }
+          done('danger',
+            `<span class="result-label">Verbindungsproblem ✗</span><div class="result-value">Verbindung vor Antwort getrennt (Code ${event.code})</div>`,
+            '<div class="result-note">Mögliche Ursache: Firewall blockiert die Verbindung oder der Server akzeptiert kein SIP über WebSocket</div>'
+          )
+        }
+      }
+    })
   }
 
   // ── WebRTC detection ──────────────────────────────────────────────────────
@@ -1726,7 +1878,7 @@
       if (state.brand) {
         const brandNames = {
           yealink: 'Yealink', gigaset: 'Gigaset', snom: 'Snom',
-          grandstream: 'Grandstream', cisco: 'Cisco SPA', other: 'Other'
+          grandstream: 'Grandstream', cisco: 'Cisco SPA', fanvil: 'Fanvil', other: 'Other'
         }
         line('Brand', brandNames[state.brand] || state.brand)
       }
