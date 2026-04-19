@@ -1,6 +1,6 @@
 # Voys VoIP Diagnostic Tool
 
-A browser-based wizard that guides users through a network analysis for VoIP troubleshooting. It runs entirely in the browser — no installation, no backend, no data is sent anywhere.
+A browser-based wizard that guides users through a network analysis for VoIP troubleshooting. It runs entirely in the browser — no installation, no backend, no data is sent anywhere. Use this as a Voys customer or feel free to make your own version.
 
 ---
 
