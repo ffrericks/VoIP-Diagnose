@@ -366,8 +366,8 @@
                 <div class="alert alert-primary p-3">
                   <p class="fw-semibold small mb-2">IP-adres van deze computer</p>
                   <p class="small mb-2">Voer het volgende commando in een terminalvenster in om uw IP-adres te vinden:</p>
-                  <div id="ipconfig-cmd-windows" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">ipconfig</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('ipconfig')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
-                  <div id="ipconfig-cmd-mac" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace d-flex justify-content-between align-items-center gap-2 d-none"><span class="user-select-all">ipconfig getifaddr en0</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('ipconfig getifaddr en0')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
+                  <div id="ipconfig-cmd-windows" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">ipconfig</span><button class="btn btn-link p-0 border-0 text-white-50 flex-shrink-0" onclick="_copyCmd(this,'ipconfig')" title="Kopieer" style="line-height:1"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
+                  <div id="ipconfig-cmd-mac" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace d-flex justify-content-between align-items-center gap-2 d-none"><span class="user-select-all">ipconfig getifaddr en0</span><button class="btn btn-link p-0 border-0 text-white-50 flex-shrink-0" onclick="_copyCmd(this,'ipconfig getifaddr en0')" title="Kopieer" style="line-height:1"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
                   <div class="d-flex gap-2 mb-2">
                     <button class="btn btn-light btn-sm" onclick="selectIPConfigOS('windows')">Windows</button>
                     <button class="btn btn-light btn-sm" onclick="selectIPConfigOS('mac')">Mac</button>
@@ -442,7 +442,7 @@
                       <li class="mb-1">Druk op <strong>Windows-toets + R</strong>, typ <strong>cmd</strong> en druk Enter</li>
                       <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
                     </ol>
-                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">ping ha.voys.be -n 20</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('ping ha.voys.be -n 20')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
+                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">ping ha.voys.be -n 20</span><button class="btn btn-link p-0 border-0 text-white-50 flex-shrink-0" onclick="_copyCmd(this,'ping ha.voys.be -n 20')" title="Kopieer" style="line-height:1"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
                     <p class="small text-muted mb-3">Wacht tot het commando klaar is. Selecteer daarna <strong>alle tekst</strong> in het venster — klik helemaal bovenaan, scroll naar beneden, houd <strong>Shift</strong> ingedrukt en klik onderaan. Druk dan op <strong>Ctrl+C</strong> en plak het resultaat hieronder.</p>
                   </div>
 
@@ -452,7 +452,7 @@
                       <li class="mb-1">Open <strong>Terminal</strong> (Spotlight: <strong>Cmd + Spatie</strong>, typ Terminal)</li>
                       <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
                     </ol>
-                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">ping -c 20 ha.voys.be</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('ping -c 20 ha.voys.be')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
+                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">ping -c 20 ha.voys.be</span><button class="btn btn-link p-0 border-0 text-white-50 flex-shrink-0" onclick="_copyCmd(this,'ping -c 20 ha.voys.be')" title="Kopieer" style="line-height:1"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
                     <p class="small text-muted mb-3">Wacht tot het commando klaar is. Selecteer daarna <strong>alle tekst</strong> in het venster (<strong>Ctrl+A</strong>), kopieer het (<strong>Ctrl+C</strong>) en plak het hieronder.</p>
                   </div>
 
@@ -497,7 +497,7 @@
                         <li class="mb-1">Druk op <strong>Windows-toets + R</strong>, typ <strong>cmd</strong> en druk Enter</li>
                         <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
                       </ol>
-                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">tracert ha.voys.be</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('tracert ha.voys.be')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
+                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">tracert ha.voys.be</span><button class="btn btn-link p-0 border-0 text-white-50 flex-shrink-0" onclick="_copyCmd(this,'tracert ha.voys.be')" title="Kopieer" style="line-height:1"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
                       <p class="small text-muted mb-3">Wacht tot het klaar is (kan 30 seconden duren). Kopieer alle output en plak hieronder.</p>
                     </div>
 
@@ -506,7 +506,7 @@
                         <li class="mb-1">Open <strong>Terminal</strong> (Spotlight: <strong>Cmd + Spatie</strong>, typ Terminal)</li>
                         <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
                       </ol>
-                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">traceroute ha.voys.be</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('traceroute ha.voys.be')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
+                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">traceroute ha.voys.be</span><button class="btn btn-link p-0 border-0 text-white-50 flex-shrink-0" onclick="_copyCmd(this,'traceroute ha.voys.be')" title="Kopieer" style="line-height:1"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
                       <p class="small text-muted mb-3">Wacht tot het klaar is. Kopieer alle output en plak hieronder.</p>
                     </div>
 
@@ -866,6 +866,15 @@
     { name: 'Cloudflare', url: 'https://1.1.1.1' }
   ]
   const PING_SAMPLES = 5
+
+  function _copyCmd(btn, text) {
+    navigator.clipboard.writeText(text)
+    const orig = btn.innerHTML
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>'
+    btn.style.color = '#198754'
+    btn.style.opacity = '1'
+    setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; btn.style.opacity = '' }, 1500)
+  }
 
   // ── Initialisatie Stap 3 ──────────────────────────────────────────────────
 
