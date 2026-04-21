@@ -366,8 +366,8 @@
                 <div class="alert alert-primary p-3">
                   <p class="fw-semibold small mb-2">IP-adres van deze computer</p>
                   <p class="small mb-2">Voer het volgende commando in een terminalvenster in om uw IP-adres te vinden:</p>
-                  <div id="ipconfig-cmd-windows" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace user-select-all">ipconfig</div>
-                  <div id="ipconfig-cmd-mac" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace user-select-all d-none">ipconfig getifaddr en0</div>
+                  <div id="ipconfig-cmd-windows" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">ipconfig</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('ipconfig')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
+                  <div id="ipconfig-cmd-mac" class="bg-dark text-light rounded px-3 py-2 mb-2 small font-monospace d-flex justify-content-between align-items-center gap-2 d-none"><span class="user-select-all">ipconfig getifaddr en0</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('ipconfig getifaddr en0')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
                   <div class="d-flex gap-2 mb-2">
                     <button class="btn btn-light btn-sm" onclick="selectIPConfigOS('windows')">Windows</button>
                     <button class="btn btn-light btn-sm" onclick="selectIPConfigOS('mac')">Mac</button>
@@ -442,7 +442,7 @@
                       <li class="mb-1">Druk op <strong>Windows-toets + R</strong>, typ <strong>cmd</strong> en druk Enter</li>
                       <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
                     </ol>
-                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">ping ha.voys.nl -n 20</div>
+                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">ping ha.voys.nl -n 20</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('ping ha.voys.nl -n 20')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
                     <p class="small text-muted mb-3">Wacht tot het commando klaar is. Selecteer daarna <strong>alle tekst</strong> in het venster — klik helemaal bovenaan, scroll naar beneden, houd <strong>Shift</strong> ingedrukt en klik onderaan. Druk dan op <strong>Ctrl+C</strong> en plak het resultaat hieronder.</p>
                   </div>
 
@@ -452,7 +452,7 @@
                       <li class="mb-1">Open <strong>Terminal</strong> (Spotlight: <strong>Cmd + Spatie</strong>, typ Terminal)</li>
                       <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
                     </ol>
-                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">ping -c 20 ha.voys.nl</div>
+                    <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">ping -c 20 ha.voys.nl</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('ping -c 20 ha.voys.nl')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
                     <p class="small text-muted mb-3">Wacht tot het commando klaar is. Selecteer daarna <strong>alle tekst</strong> in het venster (<strong>Ctrl+A</strong>), kopieer het (<strong>Ctrl+C</strong>) en plak het hieronder.</p>
                   </div>
 
@@ -466,9 +466,9 @@
                 </div>
               </div>
 
-              <!-- Double-NAT detectie -->
+              <!-- CGNAT detectie -->
               <div class="mb-4">
-                <h3 class="h6 fw-semibold mb-2">Double-NAT detectie</h3>
+                <h3 class="h6 fw-semibold mb-2">CGNAT detectie</h3>
 
                 <!-- Automatische CGNAT check -->
                 <div class="mb-2">
@@ -479,7 +479,7 @@
                 <!-- Traceroute (nauwkeuriger) -->
                 <div class="mt-3">
                   <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-muted small">Traceroute <span class="fw-normal">(nauwkeuriger)</span></span>
+                    <h3 class="h6 fw-semibold mb-0">Traceroute <span class="text-muted fw-normal small ms-1">(nauwkeuriger)</span></h3>
                     <button id="btn-toggle-traceroute" class="btn btn-outline-secondary btn-sm"
                             onclick="toggleTraceroute()">+ Toevoegen</button>
                   </div>
@@ -497,7 +497,7 @@
                         <li class="mb-1">Druk op <strong>Windows-toets + R</strong>, typ <strong>cmd</strong> en druk Enter</li>
                         <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
                       </ol>
-                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">tracert ha.voys.nl</div>
+                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">tracert ha.voys.nl</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('tracert ha.voys.nl')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
                       <p class="small text-muted mb-3">Wacht tot het klaar is (kan 30 seconden duren). Kopieer alle output en plak hieronder.</p>
                     </div>
 
@@ -506,7 +506,7 @@
                         <li class="mb-1">Open <strong>Terminal</strong> (Spotlight: <strong>Cmd + Spatie</strong>, typ Terminal)</li>
                         <li class="mb-1">Kopieer en plak het volgende commando en druk Enter:</li>
                       </ol>
-                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace user-select-all">traceroute ha.voys.nl</div>
+                      <div class="bg-dark text-light rounded px-3 py-2 mb-3 small font-monospace d-flex justify-content-between align-items-center gap-2"><span class="user-select-all">traceroute ha.voys.nl</span><button class="btn btn-link p-0 border-0 text-secondary flex-shrink-0" onclick="navigator.clipboard.writeText('traceroute ha.voys.nl')" title="Kopieer" style="line-height:1;opacity:.65"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg></button></div>
                       <p class="small text-muted mb-3">Wacht tot het klaar is. Kopieer alle output en plak hieronder.</p>
                     </div>
 
@@ -1211,9 +1211,9 @@
       console.log('[network] DOUBLE NAT gedetecteerd — extern IP is privé:', externalIP)
       document.getElementById('double-nat-result').innerHTML = `
         <div class="result-card result-danger">
-          <span class="result-label">Double-NAT gedetecteerd ⚠</span>
+          <span class="result-label">CGNAT gedetecteerd ⚠</span>
           <div class="result-value">Uw verbinding loopt door twee routers</div>
-          <div class="result-note">Extern IP: ${externalIP} (privé-adres — wijst op dubbele NAT)</div>
+          <div class="result-note">Extern IP: ${externalIP} (privé-adres — wijst op CGNAT)</div>
         </div>
       `
     } else {
@@ -1221,7 +1221,7 @@
       console.log('[network] Geen double-NAT — extern IP:', externalIP)
       document.getElementById('double-nat-result').innerHTML = `
         <div class="result-card result-success">
-          <span class="result-label">Geen double-NAT ✓</span>
+          <span class="result-label">Geen CGNAT ✓</span>
           <div class="result-note">Extern IP: ${externalIP}</div>
         </div>
       `
@@ -1371,7 +1371,7 @@
     if (doubleNAT) {
       el.innerHTML = `
         <div class="result-card result-danger mb-2">
-          <span class="result-label">Double-NAT gedetecteerd ⚠</span>
+          <span class="result-label">CGNAT gedetecteerd ⚠</span>
           <div class="result-value">Verbinding loopt door meerdere privé-netwerken</div>
           <div class="result-note">Gevonden privé-subnetten: ${[...new Set(privateHops.map(h => h.ip.split('.').slice(0,3).join('.')))].map(s => s + '.x').join(' en ')}</div>
         </div>
@@ -1380,7 +1380,7 @@
     } else {
       el.innerHTML = `
         <div class="result-card result-success mb-2">
-          <span class="result-label">Geen double-NAT ✓</span>
+          <span class="result-label">Geen CGNAT ✓</span>
           <div class="result-note">Slechts één privé-subnet zichtbaar in het pad</div>
         </div>
         <table class="table table-sm mb-0"><tbody>${hopRows}</tbody></table>
@@ -1671,14 +1671,14 @@
       const _caveat = _onSubnet
         ? ` Het toestel (${_caveatIP}) zit in het subnet van de tweede router — mogelijk heeft het toestel hier geen last van.`
         : ''
-      items.push(_diagItem(_onSubnet ? 'warning' : 'danger', 'Double-NAT gedetecteerd',
+      items.push(_diagItem(_onSubnet ? 'warning' : 'danger', 'CGNAT gedetecteerd',
         `Uw verbinding loopt door twee routers die elk NAT uitvoeren. Dit kan problemen geven met VoIP.${_caveat} <span class="text-muted">(${natSource})</span>`,
         ['Zet de eerste router in bridge-modus zodat alleen de tweede router NAT uitvoert',
          'Vraag uw internetprovider of het modem/de ONT in bridge-modus kan worden gezet',
          'Neem contact op met Voys support — zij kunnen helpen de juiste instelling te bepalen']))
       issues.push('doublenat')
     } else if (natResult === false) {
-      items.push(_diagItem('success', 'Geen double-NAT', `Uw verbinding loopt via één router. <span class="text-muted">(${natSource})</span>`, []))
+      items.push(_diagItem('success', 'Geen CGNAT', `Uw verbinding loopt via één router. <span class="text-muted">(${natSource})</span>`, []))
     }
 
     // ── MOS (uit console log) ──
@@ -1902,8 +1902,8 @@
     if (state.traceroute) {
       line('Methode', 'Traceroute')
       line('Resultaat', state.traceroute.doubleNAT
-        ? 'Double-NAT gedetecteerd — meerdere privé-subnetten in pad ⚠'
-        : 'Geen double-NAT ✓')
+        ? 'CGNAT gedetecteerd — meerdere privé-subnetten in pad ⚠'
+        : 'Geen CGNAT ✓')
       if (state.traceroute.hops.length > 0) {
         const hopLines = state.traceroute.hops.map(h => {
           if (h.timeout) return `  Hop ${h.nr}: *`
@@ -1961,7 +1961,7 @@
       ? state.pingBasic.servers.map(s => `${s.name}: ${s.avg}ms`).join(', ')
       : 'geen')
     line('WebRTC computer IP', state.computerIP || 'geen')
-    line('Double-NAT raw', state.traceroute
+    line('CGNAT raw', state.traceroute
       ? `traceroute: ${state.traceroute.doubleNAT}`
       : `WebRTC: ${state.doubleNAT}`)
     if (state.pingAdvanced) {
