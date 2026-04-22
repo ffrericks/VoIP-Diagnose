@@ -2080,6 +2080,8 @@
 
   function _parseConsoleDump(text) {
     const sessions = {}
+    let anonCount = 0
+    const openSessions = []
 
     for (const line of text.split('\n')) {
       const tsMatch = line.match(/\[(\d{1,2}-\d{1,2}-\d{4},\s*\d{2}:\d{2}:\d{2})\]/)
@@ -2088,21 +2090,37 @@
       const content = line.slice(tsMatch.index + tsMatch[0].length).trim()
 
       // Call accepted (outgoing or incoming)
-      const accepted = content.match(/^(outgoing|incoming) session is accepted.*?sessionId:\s*'([^']+)'/)
+      const accepted = content.match(/^(outgoing|incoming) session is accepted/)
       if (accepted) {
-        const [, dir, id] = accepted
+        const dir     = accepted[1]
+        const idMatch = content.match(/sessionId:\s*'([^']+)'/)
+        const id      = idMatch ? idMatch[1] : `_anon_${++anonCount}`
         if (!sessions[id]) sessions[id] = { id }
         sessions[id].direction = dir
         sessions[id].startTime = ts
+        if (!openSessions.includes(id)) openSessions.push(id)
       }
 
       // Call terminated
-      const terminated = content.match(/^(outgoing|incoming) call was terminated.*?sessionId:\s*'([^']+)'/)
+      const terminated = content.match(/^(outgoing|incoming) call was terminated/)
       if (terminated) {
-        const [, dir, id] = terminated
-        if (!sessions[id]) sessions[id] = { id }
-        if (!sessions[id].direction) sessions[id].direction = dir
-        sessions[id].endTime = ts
+        const dir     = terminated[1]
+        const idMatch = content.match(/sessionId:\s*'([^']+)'/)
+        if (idMatch) {
+          const id = idMatch[1]
+          if (!sessions[id]) sessions[id] = { id }
+          if (!sessions[id].direction) sessions[id].direction = dir
+          sessions[id].endTime = ts
+          const idx = openSessions.indexOf(id)
+          if (idx !== -1) openSessions.splice(idx, 1)
+        } else {
+          const key = openSessions.length ? openSessions[openSessions.length - 1] : null
+          if (key) {
+            if (!sessions[key].direction) sessions[key].direction = dir
+            sessions[key].endTime = ts
+            openSessions.pop()
+          }
+        }
       }
 
       // Phone number (caller or called party) — if present in the log
@@ -2114,11 +2132,21 @@
         if (num && sid && sessions[sid]) sessions[sid].number = num
       }
 
-      // MOS final stats at call end
+      // MOS final stats at call end — links anon session to real session ID if needed
       const mosTerm = content.match(/^MOS stats for terminated (\S+) - average:([\d.]+),\s*highest:([\d.]+),\s*lowest:([\d.]+)/)
       if (mosTerm) {
         const [, id, avg, highest, lowest] = mosTerm
-        if (!sessions[id]) sessions[id] = { id }
+        if (!sessions[id]) {
+          const anonKey = openSessions.find(k => k.startsWith('_anon_'))
+          if (anonKey) {
+            sessions[id] = { ...sessions[anonKey], id }
+            delete sessions[anonKey]
+            const idx = openSessions.indexOf(anonKey)
+            if (idx !== -1) openSessions[idx] = id
+          } else {
+            sessions[id] = { id }
+          }
+        }
         sessions[id].mosAvg     = parseFloat(avg)
         sessions[id].mosHighest = parseFloat(highest)
         sessions[id].mosLowest  = parseFloat(lowest)
