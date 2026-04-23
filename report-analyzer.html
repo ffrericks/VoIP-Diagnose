@@ -288,7 +288,7 @@ function parseReport(raw) {
   const logSec = getSection(text, 'WEBPHONE CONSOLE LOG');
   const rawLog = logSec;
 
-  // Extract session IDs from --- CALL N START/END --- blocks (needed before calls mapping)
+  // Extract session IDs — first from START/END pairs, then from END-only blocks
   const callSessionIds = {};
   const blockRe = /--- CALL (\d+) START ---([\s\S]*?)--- CALL \d+ END ---/gi;
   let bm;
@@ -296,6 +296,20 @@ function parseReport(raw) {
     const sidM = bm[2].match(/sessionId:\s*'([^']+)'/);
     callSessionIds[+bm[1]] = sidM?.[1] ?? null;
   }
+  // For END-only blocks (unanswered/missed calls): look backwards for a sessionId
+  const logLines = logSec.split('\n');
+  logLines.forEach((line, li) => {
+    const em = line.trim().match(/^--- CALL (\d+) END ---/);
+    if (!em || callSessionIds[+em[1]] != null) return;
+    let startIdx = 0;
+    for (let i = li - 1; i >= 0; i--) {
+      if (/^--- CALL \d+ (?:START|END) ---/.test(logLines[i].trim())) { startIdx = i + 1; break; }
+    }
+    for (let i = startIdx; i < li; i++) {
+      const sidM = logLines[i].match(/sessionId:\s*'([^']+)'/);
+      if (sidM) { callSessionIds[+em[1]] = sidM[1]; return; }
+    }
+  });
 
   const callSec = getSection(text, 'GESPREKKEN', 'CALLS (');
   const avgMOS  = parseNum(callSec,
@@ -562,7 +576,8 @@ function buildIndividualHtml(d, reportId) {
       const out = c.direction === 'Uitgaand' || c.direction.toLowerCase().includes('out');
       const t   = (() => { if (!c.datetime || /^\?/.test(c.datetime.trim())) return '—'; const p = c.datetime.trim().split(' '); return p.length >= 2 ? p[1] : c.datetime.trim(); })();
       const ms  = statusMOS(c.mos);
-      const ql  = c.mos == null ? 'No data' : c.mos >= 4 ? 'Excellent' : c.mos >= 3.5 ? 'Good' : c.mos >= 3 ? 'Fair' : 'Poor';
+      const ql  = c.mos != null ? (c.mos >= 4 ? 'Excellent' : c.mos >= 3.5 ? 'Good' : c.mos >= 3 ? 'Fair' : 'Poor')
+                : c.duration === '?' ? 'Missed' : 'No data';
       h += `<tr>
         <td class="ps-3 text-muted fw-semibold">${c.n}</td>
         <td class="text-muted">${t}</td>
@@ -998,13 +1013,17 @@ function buildRawLogHtml(rawLog) {
     if (em) { const b = blocks.get(+em[1]) ?? {}; b.end   = i; blocks.set(+em[1], b); }
   });
 
-  // For calls with END but no START: start right after the previous block ended
+  // For calls with END but no START: look for 'receiving incoming call invitation' as start
   [...blocks.entries()]
     .sort((a, b) => (a[1].end ?? 0) - (b[1].end ?? 0))
     .forEach(([, block], idx, arr) => {
       if (block.start == null && block.end != null) {
         const prevEnd = idx > 0 ? (arr[idx - 1][1].end ?? -1) : -1;
-        block.start = prevEnd + 1;
+        let found = -1;
+        for (let i = prevEnd + 1; i < block.end; i++) {
+          if (/receiving incoming call invitation/i.test(lines[i])) { found = i; break; }
+        }
+        block.start = found >= 0 ? found : prevEnd + 1;
       }
     });
 
