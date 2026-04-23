@@ -341,6 +341,23 @@ function parseReport(raw) {
   const clientId = clientIdMatch ? +clientIdMatch[1] : null;
   const version  = tryMatch(text, /version:\s*'(v[\d.]+[^']*)'/)?.[ 1] ?? null;
 
+  // ── Audio device extraction ──
+  // Prefixes that indicate Windows virtual routing devices (problematic)
+  const PROB_AUDIO_RE = /^(standaard|standard|communicatie|communications?|kommunikations?)\s*[-–]/i;
+  const audioDevMap = new Map();
+  function addAudioDev(name, kind) {
+    if (!name?.trim() || audioDevMap.has(name)) return;
+    audioDevMap.set(name, { name, kind, isProblematic: PROB_AUDIO_RE.test(name.trim()) });
+  }
+  for (const m of logSec.matchAll(/changed local setting "headsetInput" to:\s*\{"id":"[^"]*","name":"([^"]+)","kind":"(audioinput)"/gi))
+    addAudioDev(m[1], 'audioinput');
+  for (const m of logSec.matchAll(/changed local setting "headsetOutput" to:\s*\{"id":"[^"]*","name":"([^"]+)","kind":"(audiooutput)"/gi))
+    addAudioDev(m[1], 'audiooutput');
+  for (const m of logSec.matchAll(/\bsound\b[^\n{]*\{sink:\s*'([^']+)'/gi))
+    addAudioDev(m[1], 'audiooutput');
+  const audioDevices = [...audioDevMap.values()];
+  const hasProblematicAudio = audioDevices.some(d => d.isProblematic);
+
   return {
     timestamp, deviceType, deviceIP, version,
     voys, osso, cloudflare,
@@ -349,7 +366,7 @@ function parseReport(raw) {
     calls, avgMOS,
     sipStatus, sipOK, sipResp, sipConn,
     sentryBlocked, sentryBlockCount, iceFailed, soundFailed, mosUndefined,
-    clientId, rawLog,
+    clientId, rawLog, audioDevices, hasProblematicAudio,
   };
 }
 
@@ -459,6 +476,20 @@ function buildTips(d) {
       `One or more calls ended before MOS data could be collected. Usually a very short call or rejected before connecting.` });
   }
 
+  if (d.hasProblematicAudio) {
+    const badNames = [...new Set(d.audioDevices.filter(a => a.isProblematic).map(a => `<strong>${escHtml(a.name)}</strong>`))]
+      .join(', ');
+    tips.push({ level: 'warn', title: 'Problematic Audio Device Detected', body:
+      `The webphone is using a Windows virtual audio device: ${badNames}. ` +
+      `"Standaard" (Default) and "Communicatie" (Communications) are not real hardware — ` +
+      `Windows routes audio through them unpredictably, which often causes wrong-device routing or no audio. ` +
+      `<ul class="mb-0 mt-1">` +
+      `<li>Open webphone settings <strong>(gear → Audio)</strong>.</li>` +
+      `<li>Select the actual headset or microphone by its real name for both input and output.</li>` +
+      `<li>Avoid anything starting with "Standaard", "Communicatie", "Standard" or "Communications".</li>` +
+      `</ul>` });
+  }
+
   if (d.soundFailed) {
     tips.push({ level: 'bad', title: 'Audio Device Error Detected', body:
       `The console log shows an audio device error. ` +
@@ -487,6 +518,7 @@ function buildTips(d) {
 // ═══════════════════════════════════════════════════════
 //  HTML helpers
 // ═══════════════════════════════════════════════════════
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function dot(s) { return `<span class="dot dot-${s} me-1"></span>`; }
 
 function metricCard(title, value, status, sub) {
@@ -608,6 +640,29 @@ function buildIndividualHtml(d, reportId) {
     <div class="col-6 col-md-3">${metricCard('Response Time', d.sipResp != null ? d.sipResp+' ms' : '—')}</div>
     <div class="col-6 col-md-3">${metricCard('Connection Time', d.sipConn != null ? d.sipConn+' ms' : '—')}</div>
   </div>`;
+
+  // Audio devices (webphone only)
+  if (d.audioDevices?.length > 0) {
+    h += `<div class="section-label">Audio Devices</div>
+    <div class="card mb-3"><div class="table-responsive">
+    <table class="table table-sm mb-0" style="font-size:.82rem">
+      <thead><tr style="font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;border-bottom:2px solid rgba(0,0,0,.08)">
+        <th class="ps-3" style="width:4.5rem">Type</th>
+        <th>Device Name</th>
+        <th style="width:6rem">Status</th>
+      </tr></thead><tbody>`;
+    d.audioDevices.forEach(dev => {
+      const kindLabel = dev.kind === 'audioinput' ? 'Microphone' : 'Speaker';
+      const s = dev.isProblematic ? 'warn' : 'ok';
+      const sl = dev.isProblematic ? 'Avoid' : 'OK';
+      h += `<tr>
+        <td class="ps-3 text-muted">${kindLabel}</td>
+        <td style="font-family:'Courier New',monospace;font-size:.78rem">${escHtml(dev.name)}</td>
+        <td><span class="status-badge badge-${s}" style="padding:2px 8px;font-size:.68rem">${sl}</span></td>
+      </tr>`;
+    });
+    h += `</tbody></table></div></div>`;
+  }
 
   // Console log notes
   const logItems = [
@@ -1000,7 +1055,7 @@ function renderCallMOSChart(callsWithMOS) {
 // ═══════════════════════════════════════════════════════
 function buildRawLogHtml(rawLog) {
   if (!rawLog?.trim()) return '';
-  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  const DEVICE_LINE_RE = /changed local setting "headset(?:Input|Output)"|setting headset(?:Input|Output) for future|changed headset sink to:/i;
 
   const lines = rawLog.split('\n');
 
@@ -1048,11 +1103,16 @@ function buildRawLogHtml(rawLog) {
   let html = `<div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:.5rem;font-family:'Courier New',monospace;font-size:.7rem;line-height:1.55">`;
   segments.forEach(seg => {
     if (seg.type === 'plain') {
-      html += `<pre style="margin:0;padding:.2rem .5rem;font-family:inherit;font-size:inherit;background:transparent;white-space:pre-wrap;word-break:break-all">${esc(seg.text)}</pre>`;
+      seg.text.split('\n').forEach(line => {
+        const isDevice = DEVICE_LINE_RE.test(line);
+        html += `<div style="padding:0 .5rem;white-space:pre-wrap;word-break:break-all${isDevice ? ';background:#fef3c7;border-radius:3px' : ''}">${escHtml(line)}</div>`;
+      });
     } else {
-      html += `<div style="background:#dbeafe;border-radius:8px;padding:.5rem .75rem;margin:.3rem 0">
-        <pre style="margin:0;font-family:inherit;font-size:inherit;background:transparent;white-space:pre-wrap;word-break:break-all">${esc(seg.text)}</pre>
-      </div>`;
+      html += `<div style="background:#dbeafe;border-radius:8px;padding:.25rem .5rem;margin:.3rem 0">`;
+      seg.text.split('\n').forEach(line => {
+        html += `<div style="padding:0 .25rem;white-space:pre-wrap;word-break:break-all">${escHtml(line)}</div>`;
+      });
+      html += `</div>`;
     }
   });
   html += `</div>`;
