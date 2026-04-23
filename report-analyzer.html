@@ -285,6 +285,18 @@ function parseReport(raw) {
   const privateHopCount = hopLines.filter(l => { const m = l.match(/:\s*(\d+\.\d+\.\d+\.\d+)/); return m && isPrivateIP(m[1]); }).length;
   const doubleNatTraceroute = hopCount > 0 ? (privateHopCount >= 2) : null;
 
+  const logSec = getSection(text, 'CONSOLE LOG');
+  const rawLog = logSec;
+
+  // Extract session IDs from --- CALL N START/END --- blocks (needed before calls mapping)
+  const callSessionIds = {};
+  const blockRe = /--- CALL (\d+) START ---([\s\S]*?)--- CALL \d+ END ---/gi;
+  let bm;
+  while ((bm = blockRe.exec(logSec)) !== null) {
+    const sidM = bm[2].match(/sessionId:\s*'([^']+)'/);
+    callSessionIds[+bm[1]] = sidM?.[1] ?? null;
+  }
+
   const callSec = getSection(text, 'GESPREKKEN', 'CALLS (');
   const avgMOS  = parseNum(callSec,
     /Gemiddelde MOS alle gesprekken:\s*(\d+\.\d+)/i,
@@ -296,6 +308,7 @@ function parseReport(raw) {
   const calls = callMatches.map(m => ({
     n: +m[1], datetime: m[2]?.trim(), direction: m[3], duration: m[4],
     mos: m[5] === '?' ? null : parseFloat(m[5]),
+    sessionId: callSessionIds[+m[1]] ?? null,
   }));
 
   const sipSec   = getSection(text, 'SIP VERBINDING', 'SIP CONNECTION');
@@ -305,7 +318,6 @@ function parseReport(raw) {
   const sipResp   = parseNum(sipSec, /(?:Reactietijd|Response time):\s*(\d+)\s*ms/i);
   const sipConn   = parseNum(sipSec, /(?:Verbindingstijd|Connection time):\s*(\d+)\s*ms/i);
 
-  const logSec        = getSection(text, 'CONSOLE LOG');
   const sentryBlocked = /ERR_BLOCKED_BY_CLIENT/i.test(logSec);
   const iceFailed     = /ICE.*fail|ice.*failed/i.test(logSec);
   const soundFailed   = /sound.*failed|audio.*error|mediadevice.*error/i.test(logSec);
@@ -323,7 +335,7 @@ function parseReport(raw) {
     calls, avgMOS,
     sipStatus, sipOK, sipResp, sipConn,
     sentryBlocked, sentryBlockCount, iceFailed, soundFailed, mosUndefined,
-    clientId,
+    clientId, rawLog,
   };
 }
 
@@ -485,7 +497,7 @@ function serverCard(name, data) {
 // ═══════════════════════════════════════════════════════
 //  Build individual report HTML (returns string)
 // ═══════════════════════════════════════════════════════
-function buildIndividualHtml(d) {
+function buildIndividualHtml(d, reportId) {
   const tips   = buildTips(d);
   const status = tips.some(t => t.level === 'bad') ? 'bad' : tips.some(t => t.level === 'warn') ? 'warn' : 'ok';
   const icons  = { ok:'✅', warn:'⚠️', bad:'❌' };
@@ -604,6 +616,17 @@ function buildIndividualHtml(d) {
       <div class="tip-body text-muted">${tip.body}</div></div>`;
   });
 
+  // Raw log viewer (webphone only)
+  if (d.rawLog?.trim()) {
+    const uid = `rawlog-${reportId ?? Date.now()}`;
+    h += `<div class="section-label d-flex justify-content-between align-items-center mt-3">
+      <span>Raw Console Log</span>
+      <button class="btn btn-sm btn-outline-secondary" style="font-size:.7rem;padding:1px 10px"
+              onclick="toggleElement('${uid}')">Show / Hide</button>
+    </div>
+    <div id="${uid}" class="d-none mb-3">${buildRawLogHtml(d.rawLog)}</div>`;
+  }
+
   h += `</div>`;
   return h;
 }
@@ -644,7 +667,7 @@ function renderReportsList() {
                 onclick="event.stopPropagation();deleteReport(${r.id})" title="Remove">✕</button>
       </div>
       <div class="${isOpen ? '' : 'd-none'} report-row-detail" id="detail-${r.id}">
-        ${buildIndividualHtml(r.parsed)}
+        ${buildIndividualHtml(r.parsed, r.id)}
       </div>
     </div>`;
   }).join('');
@@ -656,23 +679,28 @@ function renderReportsList() {
 function renderTrendsSection() {
   const section = document.getElementById('trendsSection');
   if (reports.length === 0) { section.classList.add('d-none'); section.innerHTML = ''; return; }
-  section.classList.remove('d-none');
 
   const sorted = [...reports].sort((a, b) => {
     const ta = parseTimestamp(a.parsed.timestamp), tb = parseTimestamp(b.parsed.timestamp);
     return (ta && tb) ? ta - tb : 0;
   });
 
+  const allCalls     = collectAllUniqueCalls();
+  const callsWithMOS = allCalls.filter(c => c.mos != null);
+  const hasMultiRep  = reports.length >= 2;
+  const hasCallMOS   = callsWithMOS.length >= 2;
+
+  if (!hasMultiRep && !hasCallMOS) { section.classList.add('d-none'); section.innerHTML = ''; return; }
+  section.classList.remove('d-none');
+
   let html = '';
 
-  // ── Cross-validation (≥2 reports) ──
-  if (reports.length >= 2) {
-    html += buildCrossValidationHtml(sorted);
-  }
+  // Cross-validation (≥2 reports)
+  if (hasMultiRep) html += buildCrossValidationHtml(sorted);
 
-  // ── Charts (≥2 reports with any metric data) ──
-  if (reports.length >= 2) {
-    const labels = sorted.map(r => formatLabel(r.parsed.timestamp));
+  // Trend line charts (≥2 reports)
+  const trendLabels = hasMultiRep ? sorted.map(r => formatLabel(r.parsed.timestamp)) : [];
+  if (hasMultiRep) {
     html += `<div class="section-label mt-3">Trends Over Time</div>
     <div class="row g-3 mb-4">
       <div class="col-12 col-md-6"><div class="card chart-card" id="wrap-latency">
@@ -688,15 +716,30 @@ function renderTrendsSection() {
         <canvas id="chartSIP"></canvas>
       </div></div>
       <div class="col-12 col-md-6"><div class="card chart-card" id="wrap-mos">
-        <div class="chart-title">Call Quality — MOS</div>
+        <div class="chart-title">Average MOS Per Report</div>
         <canvas id="chartMOS"></canvas>
       </div></div>
     </div>`;
-    section.innerHTML = html;
-    renderCharts(sorted, labels);
-  } else {
-    section.innerHTML = html;
   }
+
+  // Per-call MOS bar chart (≥2 unique calls with MOS data)
+  if (hasCallMOS) {
+    const cnt   = callsWithMOS.length;
+    const title = hasMultiRep
+      ? `${cnt} call${cnt !== 1 ? 's' : ''} across ${reports.length} reports`
+      : `${cnt} call${cnt !== 1 ? 's' : ''}`;
+    html += `<div class="section-label mt-3">Per-Call MOS</div>
+    <div class="row g-3 mb-4">
+      <div class="col-12"><div class="card chart-card" id="wrap-callmos">
+        <div class="chart-title">Call Quality — MOS (${title})</div>
+        <canvas id="chartCallMOS"></canvas>
+      </div></div>
+    </div>`;
+  }
+
+  section.innerHTML = html;
+  if (hasMultiRep) renderCharts(sorted, trendLabels);
+  if (hasCallMOS)  renderCallMOSChart(callsWithMOS);
 }
 
 function buildCrossValidationHtml(sorted) {
@@ -852,6 +895,133 @@ function renderCharts(sorted, labels) {
      { value: T.mosGood, color: 'rgba(25,135,84,0.45)' }],
     1, 5
   );
+}
+
+// ═══════════════════════════════════════════════════════
+//  Per-call MOS bar chart
+// ═══════════════════════════════════════════════════════
+function makeBarChart(id, wrapId, labels, data, colors, yMin, yMax, thresholds) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+  const wrap = document.getElementById(wrapId);
+  if (!data.some(v => v != null)) { if (wrap) wrap.style.display = 'none'; return; }
+  if (wrap) wrap.style.display = '';
+  chartInstances[id] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderColor: colors.map(c => c.replace('.75)', '1)')),
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 300 },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.parsed.y != null ? `MOS: ${ctx.parsed.y.toFixed(2)}` : 'No data' } }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { size: 9, family: 'Montserrat, sans-serif' }, maxRotation: 45 }
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { size: 10, family: 'Montserrat, sans-serif' } },
+          min: yMin ?? 0,
+          ...(yMax != null ? { max: yMax } : {}),
+        }
+      },
+      _thresholds: thresholds ?? [],
+    },
+    plugins: [thresholdPlugin],
+  });
+}
+
+function callDedupeKey(c) {
+  if (c.sessionId) return 'sid:' + c.sessionId;
+  return 'dt:' + (c.datetime ?? '?') + '|' + (c.direction ?? '?');
+}
+
+function collectAllUniqueCalls() {
+  const seen = new Set();
+  const result = [];
+  for (const r of reports) {
+    for (const c of r.parsed.calls) {
+      const key = callDedupeKey(c);
+      if (!seen.has(key)) { seen.add(key); result.push(c); }
+    }
+  }
+  return result;
+}
+
+function renderCallMOSChart(callsWithMOS) {
+  const labels = callsWithMOS.map(c => {
+    const parts = (c.datetime ?? '').trim().split(/\s+/);
+    const time  = parts.length >= 2 ? parts[1] : (parts[0] ?? '?');
+    const dir   = c.direction === 'Uitgaand' || /out/i.test(c.direction ?? '') ? '↗' : '↙';
+    return dir + ' ' + time;
+  });
+  const data   = callsWithMOS.map(c => c.mos);
+  const colors = callsWithMOS.map(c =>
+    c.mos >= T.mosGood ? 'rgba(5,150,105,.75)' :
+    c.mos >= T.mosWarn ? 'rgba(217,119,6,.75)' :
+                         'rgba(220,53,69,.75)'
+  );
+  makeBarChart('chartCallMOS', 'wrap-callmos', labels, data, colors, 1, 5, [
+    { value: T.mosWarn, color: 'rgba(255,193,7,0.65)' },
+    { value: T.mosGood, color: 'rgba(25,135,84,0.45)' },
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════
+//  Raw log viewer
+// ═══════════════════════════════════════════════════════
+function buildRawLogHtml(rawLog) {
+  if (!rawLog?.trim()) return '';
+  const callColors = [
+    { bg: '#f0edff', border: '#270697' },
+    { bg: '#e6f7fb', border: '#0891b2' },
+    { bg: '#fff4ed', border: '#f97316' },
+    { bg: '#ecfdf5', border: '#059669' },
+    { bg: '#fff1f2', border: '#dc3545' },
+  ];
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  const segments = [];
+  let lastIdx = 0;
+  const re = /--- CALL (\d+) START ---[\s\S]*?--- CALL \d+ END ---/gi;
+  let m;
+  while ((m = re.exec(rawLog)) !== null) {
+    if (m.index > lastIdx) segments.push({ type: 'plain', text: rawLog.slice(lastIdx, m.index) });
+    const n = +m[1];
+    segments.push({ type: 'call', n, text: m[0], c: callColors[(n - 1) % callColors.length] });
+    lastIdx = m.index + m[0].length;
+  }
+  if (lastIdx < rawLog.length) segments.push({ type: 'plain', text: rawLog.slice(lastIdx) });
+  let html = `<div style="border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,.1)">`;
+  segments.forEach(seg => {
+    if (seg.type === 'plain') {
+      html += `<pre style="margin:0;padding:.6rem 1rem;font-family:'Courier New',monospace;font-size:.7rem;line-height:1.5;background:#1e1e2e;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;border-radius:0">${esc(seg.text)}</pre>`;
+    } else {
+      html += `<div style="margin:.4rem;border:2px solid ${seg.c.border};border-radius:7px;overflow:hidden">
+        <div style="background:${seg.c.border};color:#fff;padding:.25rem .75rem;font-family:'Courier New',monospace;font-size:.68rem;font-weight:700;letter-spacing:.06em">CALL ${seg.n}</div>
+        <pre style="margin:0;padding:.65rem .75rem;font-family:'Courier New',monospace;font-size:.7rem;line-height:1.5;background:${seg.c.bg};white-space:pre-wrap;word-break:break-all">${esc(seg.text)}</pre>
+      </div>`;
+    }
+  });
+  html += `</div>`;
+  return html;
+}
+
+function toggleElement(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('d-none');
 }
 
 // ═══════════════════════════════════════════════════════
