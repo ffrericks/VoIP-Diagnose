@@ -985,33 +985,54 @@ function renderCallMOSChart(callsWithMOS) {
 // ═══════════════════════════════════════════════════════
 function buildRawLogHtml(rawLog) {
   if (!rawLog?.trim()) return '';
-  const callColors = [
-    { bg: '#f0edff', border: '#270697' },
-    { bg: '#e6f7fb', border: '#0891b2' },
-    { bg: '#fff4ed', border: '#f97316' },
-    { bg: '#ecfdf5', border: '#059669' },
-    { bg: '#fff1f2', border: '#dc3545' },
-  ];
   function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  const lines = rawLog.split('\n');
+
+  // Map call numbers to their line ranges (handles missing START markers)
+  const blocks = new Map();
+  lines.forEach((line, i) => {
+    const sm = line.trim().match(/^--- CALL (\d+) START ---/);
+    const em = line.trim().match(/^--- CALL (\d+) END ---/);
+    if (sm) { const b = blocks.get(+sm[1]) ?? {}; b.start = i; blocks.set(+sm[1], b); }
+    if (em) { const b = blocks.get(+em[1]) ?? {}; b.end   = i; blocks.set(+em[1], b); }
+  });
+
+  // For calls with END but no START: start right after the previous block ended
+  [...blocks.entries()]
+    .sort((a, b) => (a[1].end ?? 0) - (b[1].end ?? 0))
+    .forEach(([, block], idx, arr) => {
+      if (block.start == null && block.end != null) {
+        const prevEnd = idx > 0 ? (arr[idx - 1][1].end ?? -1) : -1;
+        block.start = prevEnd + 1;
+      }
+    });
+
+  // Assign each line to a call number (null = plain)
+  const lineCall = new Array(lines.length).fill(null);
+  blocks.forEach((block, n) => {
+    if (block.start != null && block.end != null)
+      for (let i = block.start; i <= block.end; i++) lineCall[i] = n;
+  });
+
+  // Group consecutive lines into segments
   const segments = [];
-  let lastIdx = 0;
-  const re = /--- CALL (\d+) START ---[\s\S]*?--- CALL \d+ END ---/gi;
-  let m;
-  while ((m = re.exec(rawLog)) !== null) {
-    if (m.index > lastIdx) segments.push({ type: 'plain', text: rawLog.slice(lastIdx, m.index) });
-    const n = +m[1];
-    segments.push({ type: 'call', n, text: m[0], c: callColors[(n - 1) % callColors.length] });
-    lastIdx = m.index + m[0].length;
+  let i = 0;
+  while (i < lines.length) {
+    const cn = lineCall[i];
+    let j = i + 1;
+    while (j < lines.length && lineCall[j] === cn) j++;
+    segments.push({ type: cn === null ? 'plain' : 'call', n: cn, text: lines.slice(i, j).join('\n') });
+    i = j;
   }
-  if (lastIdx < rawLog.length) segments.push({ type: 'plain', text: rawLog.slice(lastIdx) });
-  let html = `<div style="border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,.1)">`;
+
+  let html = `<div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:.5rem;font-family:'Courier New',monospace;font-size:.7rem;line-height:1.55">`;
   segments.forEach(seg => {
     if (seg.type === 'plain') {
-      html += `<pre style="margin:0;padding:.6rem 1rem;font-family:'Courier New',monospace;font-size:.7rem;line-height:1.5;background:#1e1e2e;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;border-radius:0">${esc(seg.text)}</pre>`;
+      html += `<pre style="margin:0;padding:.2rem .5rem;font-family:inherit;font-size:inherit;background:transparent;white-space:pre-wrap;word-break:break-all">${esc(seg.text)}</pre>`;
     } else {
-      html += `<div style="margin:.4rem;border:2px solid ${seg.c.border};border-radius:7px;overflow:hidden">
-        <div style="background:${seg.c.border};color:#fff;padding:.25rem .75rem;font-family:'Courier New',monospace;font-size:.68rem;font-weight:700;letter-spacing:.06em">CALL ${seg.n}</div>
-        <pre style="margin:0;padding:.65rem .75rem;font-family:'Courier New',monospace;font-size:.7rem;line-height:1.5;background:${seg.c.bg};white-space:pre-wrap;word-break:break-all">${esc(seg.text)}</pre>
+      html += `<div style="background:#dbeafe;border-radius:8px;padding:.5rem .75rem;margin:.3rem 0">
+        <pre style="margin:0;font-family:inherit;font-size:inherit;background:transparent;white-space:pre-wrap;word-break:break-all">${esc(seg.text)}</pre>
       </div>`;
     }
   });
