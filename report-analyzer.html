@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
   <style>
     :root {
@@ -21,52 +22,46 @@
     body { background-color: #f5f4fb; color: #1a1a2e; }
 
     .card { border: 1px solid rgba(0,0,0,.07); border-radius: 14px; }
-
     .btn-primary { background-color: var(--voys); border-color: var(--voys); }
     .btn-primary:hover, .btn-primary:focus { background-color: var(--voys-dark); border-color: var(--voys-dark); }
-
     .btn-outline-primary { color: var(--voys); border-color: var(--voys); }
     .btn-outline-primary:hover { background-color: var(--voys); color: #fff; }
-
     .text-primary { color: var(--voys) !important; }
-
-    .form-control:focus, .form-select:focus {
+    .form-control:focus {
       border-color: var(--voys);
       box-shadow: 0 0 0 0.2rem rgba(var(--voys-rgb), 0.15);
     }
 
-    /* ── Status badge ── */
+    /* ── Status badges ── */
     .status-badge {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 4px 14px; border-radius: 20px;
       font-size: 0.78rem; font-weight: 600; letter-spacing: .03em;
     }
-    .badge-ok   { background: rgba(25,135,84,.1);  color: #157347; border: 1px solid rgba(25,135,84,.25); }
-    .badge-warn { background: rgba(255,193,7,.15); color: #856404; border: 1px solid rgba(255,193,7,.4); }
-    .badge-bad  { background: rgba(220,53,69,.08); color: #b02a37; border: 1px solid rgba(220,53,69,.25); }
-    .badge-info { background: rgba(var(--voys-rgb),.07); color: var(--voys); border: 1px solid rgba(var(--voys-rgb),.2); }
-    .badge-na   { background: rgba(0,0,0,.05); color: #6c757d; border: 1px solid rgba(0,0,0,.12); }
+    .badge-ok   { background: rgba(25,135,84,.1);          color: #157347; border: 1px solid rgba(25,135,84,.25); }
+    .badge-warn { background: rgba(255,193,7,.15);         color: #856404; border: 1px solid rgba(255,193,7,.4); }
+    .badge-bad  { background: rgba(220,53,69,.08);         color: #b02a37; border: 1px solid rgba(220,53,69,.25); }
+    .badge-info { background: rgba(var(--voys-rgb),.07);   color: var(--voys); border: 1px solid rgba(var(--voys-rgb),.2); }
+    .badge-na   { background: rgba(0,0,0,.05);             color: #6c757d; border: 1px solid rgba(0,0,0,.12); }
 
-    /* ── Overall status bar ── */
+    /* ── Overall bar ── */
     .overall-bar {
-      border-radius: 12px; padding: 1rem 1.25rem;
-      display: flex; align-items: center; gap: 12px;
+      border-radius: 12px; padding: .9rem 1.1rem;
+      display: flex; align-items: center; gap: 10px;
     }
     .overall-ok   { background: rgba(25,135,84,.08);  border: 1.5px solid rgba(25,135,84,.3); }
     .overall-warn { background: rgba(255,193,7,.12);  border: 1.5px solid rgba(255,193,7,.5); }
     .overall-bad  { background: rgba(220,53,69,.07);  border: 1.5px solid rgba(220,53,69,.3); }
 
-    .overall-icon { font-size: 1.6rem; line-height: 1; }
-
     /* ── Metric cards ── */
     .metric-card {
-      border-radius: 12px; padding: 1rem 1.1rem;
+      border-radius: 12px; padding: .85rem 1rem;
       border: 1px solid rgba(0,0,0,.08);
       background: #fff; height: 100%;
     }
-    .metric-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #6c757d; margin-bottom: .5rem; }
-    .metric-value { font-size: .95rem; font-weight: 600; }
-    .metric-sub   { font-size: .78rem; color: #6c757d; margin-top: 2px; }
+    .metric-title { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #6c757d; margin-bottom: .4rem; }
+    .metric-value { font-size: .92rem; font-weight: 600; }
+    .metric-sub   { font-size: .75rem; color: #6c757d; margin-top: 2px; }
 
     .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
     .dot-ok   { background: #198754; }
@@ -75,35 +70,47 @@
     .dot-na   { background: #adb5bd; }
 
     /* ── Tip cards ── */
-    .tip-card {
-      border-radius: 10px; padding: .85rem 1rem;
-      border-left: 4px solid; margin-bottom: .6rem;
-    }
+    .tip-card { border-radius: 10px; padding: .8rem 1rem; border-left: 4px solid; margin-bottom: .5rem; }
     .tip-bad  { border-color: #dc3545; background: rgba(220,53,69,.05); }
     .tip-warn { border-color: #ffc107; background: rgba(255,193,7,.07); }
     .tip-info { border-color: var(--voys); background: rgba(var(--voys-rgb),.05); }
     .tip-ok   { border-color: #198754; background: rgba(25,135,84,.05); }
+    .tip-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .7; }
+    .tip-body  { font-size: .85rem; margin-top: 2px; }
 
-    .tip-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .7; }
-    .tip-body  { font-size: .875rem; margin-top: 2px; }
-
-    /* ── Section headers ── */
+    /* ── Section label ── */
     .section-label {
       font-size: .68rem; font-weight: 700; letter-spacing: .08em;
       text-transform: uppercase; color: #6c757d;
       border-bottom: 1px solid rgba(0,0,0,.07);
-      padding-bottom: .4rem; margin-bottom: .9rem;
+      padding-bottom: .35rem; margin-bottom: .85rem;
     }
+
+    /* ── Report rows ── */
+    .report-row { background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 12px; overflow: hidden; }
+    .report-row-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: .75rem 1rem; cursor: pointer;
+      transition: background .1s;
+    }
+    .report-row-header:hover { background: rgba(var(--voys-rgb),.03); }
+    .report-row-detail { border-top: 1px solid rgba(0,0,0,.07); background: #fafaf9; }
+
+    .btn-icon {
+      width: 28px; height: 28px; border-radius: 7px; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: .8rem; line-height: 1; flex-shrink: 0;
+    }
+
+    /* ── Chart cards ── */
+    .chart-card { padding: 1rem 1.1rem; }
+    .chart-title { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #6c757d; margin-bottom: .6rem; }
 
     /* ── Textarea ── */
     #reportInput { font-family: 'Courier New', monospace; font-size: .78rem; resize: vertical; }
 
-    /* ── Copy button ── */
-    .btn-copy { font-size: .78rem; }
-
-    /* ── Fade in ── */
-    #results { animation: fadeIn .25s ease; }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+    .fade-in { animation: fadeIn .2s ease; }
   </style>
 </head>
 <body>
@@ -120,28 +127,37 @@
   </div>
 
   <!-- Input card -->
-  <div class="card mb-4">
+  <div class="card mb-3">
     <div class="card-body p-3">
       <label class="form-label fw-semibold mb-1" style="font-size:.85rem">Paste diagnosis report</label>
-      <div style="font-size:.75rem;color:#6c757d;margin-bottom:.5rem">Supports Dutch and English reports</div>
-      <textarea id="reportInput" class="form-control" rows="9"
-        placeholder="Paste the full VoIP diagnosis report here (VOYS VOIP DIAGNOSERAPPORT / VOYS VOIP DIAGNOSIS REPORT)…"></textarea>
+      <div style="font-size:.75rem;color:#6c757d;margin-bottom:.5rem">Supports Dutch and English · Ctrl+Enter to add</div>
+      <textarea id="reportInput" class="form-control" rows="8"
+        placeholder="Paste the full VoIP diagnosis report here…"></textarea>
       <div class="d-flex gap-2 mt-3">
-        <button class="btn btn-primary px-4" onclick="analyzeReport()">Analyse Report</button>
-        <button class="btn btn-outline-secondary" onclick="clearAll()">Clear</button>
+        <button class="btn btn-primary px-4" onclick="addReport()">Add Report</button>
+        <button class="btn btn-outline-secondary" onclick="clearInput()">Clear</button>
       </div>
     </div>
   </div>
 
-  <!-- Results -->
-  <div id="results" class="d-none"></div>
+  <!-- Reports list -->
+  <div id="reportsSection" class="d-none mb-3">
+    <div class="section-label d-flex justify-content-between align-items-center">
+      <span id="reportsCount">Reports (0)</span>
+      <button class="btn btn-sm btn-outline-danger" style="font-size:.72rem;padding:2px 10px" onclick="removeAll()">Remove all</button>
+    </div>
+    <div id="reportsList" class="d-flex flex-column gap-2"></div>
+  </div>
+
+  <!-- Trends & cross-validation -->
+  <div id="trendsSection" class="d-none"></div>
 
 </div>
 
 <script>
-// ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 //  Thresholds
-// ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 const T = {
   latencyGood: 50, latencyWarn: 100,
   jitterGood: 10,  jitterWarn: 30,
@@ -150,57 +166,58 @@ const T = {
   mosGood: 4.0,    mosWarn: 3.5,
 };
 
-// ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════════════
+const reports = [];
+let nextId = 0;
+const chartInstances = {};
+
+// ═══════════════════════════════════════════════════════
 //  Status helpers
-// ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 function statusOf(value, goodMax, warnMax) {
   if (value == null) return 'na';
   if (value <= goodMax) return 'ok';
   if (value <= warnMax) return 'warn';
   return 'bad';
 }
-
 function statusMOS(mos) {
   if (mos == null) return 'na';
   if (mos >= T.mosGood) return 'ok';
   if (mos >= T.mosWarn) return 'warn';
   return 'bad';
 }
-
-function worstStatus(...statuses) {
-  if (statuses.includes('bad'))  return 'bad';
-  if (statuses.includes('warn')) return 'warn';
-  if (statuses.includes('ok'))   return 'ok';
+function worstStatus(...s) {
+  if (s.includes('bad'))  return 'bad';
+  if (s.includes('warn')) return 'warn';
+  if (s.includes('ok'))   return 'ok';
   return 'na';
 }
-
-// ─────────────────────────────────────────────────────
-//  Regex helpers — try multiple patterns
-// ─────────────────────────────────────────────────────
-function tryMatch(text, ...patterns) {
-  for (const p of patterns) {
-    const m = text.match(p);
-    if (m) return m;
-  }
-  return null;
+function getReportStatus(parsed) {
+  const tips = buildTips(parsed);
+  return tips.some(t => t.level === 'bad') ? 'bad'
+       : tips.some(t => t.level === 'warn') ? 'warn'
+       : 'ok';
 }
 
+// ═══════════════════════════════════════════════════════
+//  Regex / section helpers
+// ═══════════════════════════════════════════════════════
+function tryMatch(text, ...patterns) {
+  for (const p of patterns) { const m = text.match(p); if (m) return m; }
+  return null;
+}
 function parseNum(text, ...patterns) {
   const m = tryMatch(text, ...patterns);
   return m ? parseFloat(m[1]) : null;
 }
-
-// ─────────────────────────────────────────────────────
-//  Section splitter
-// ─────────────────────────────────────────────────────
-function getSection(text, ...headerKeywords) {
+function getSection(text, ...keywords) {
   const lines = text.split('\n');
   let inside = false, out = [];
   for (const line of lines) {
-    const upper = line.toUpperCase();
-    if (!inside && headerKeywords.some(k => upper.includes(k.toUpperCase()))) {
-      inside = true; continue;
-    }
+    const up = line.toUpperCase();
+    if (!inside && keywords.some(k => up.includes(k.toUpperCase()))) { inside = true; continue; }
     if (inside) {
       if (/─{8,}/.test(line)) break;
       out.push(line);
@@ -209,117 +226,94 @@ function getSection(text, ...headerKeywords) {
   return out.join('\n');
 }
 
-// ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+//  Timestamp helpers
+// ═══════════════════════════════════════════════════════
+function parseTimestamp(ts) {
+  if (!ts) return null;
+  const m = ts.match(/(\d{1,2})-(\d{1,2})-(\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], m[6] ? +m[6] : 0);
+  return null;
+}
+function formatLabel(ts) {
+  const d = parseTimestamp(ts);
+  if (!d) return ts ?? '—';
+  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+  return `${d.getDate()} ${mo} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// ═══════════════════════════════════════════════════════
 //  Parser
-// ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 function parseReport(raw) {
   const text = raw;
 
-  // ── Device ──
   const deviceType = tryMatch(text, /Type:\s*(.+)/i)?.[1]?.trim() ?? null;
   const deviceIP   = tryMatch(text, /IP\s+computer:\s*(.+)/i)?.[1]?.trim() ?? null;
-  const timestamp  = tryMatch(text, /Gegenereerd op\s+(.+)|Generated on\s+(.+)/i)?.[1]?.trim()
-                  ?? tryMatch(text, /Gegenereerd op\s+(.+)|Generated on\s+(.+)/i)?.[2]?.trim() ?? null;
+  const tsMatch    = tryMatch(text, /Gegenereerd op\s+(.+)|Generated on\s+(.+)/i);
+  const timestamp  = tsMatch?.[1]?.trim() ?? tsMatch?.[2]?.trim() ?? null;
 
-  // ── Browser latency section ──
   const latSec = getSection(text, 'VERBINDINGSSNELHEID', 'CONNECTION SPEED', 'BROWSER');
-
   function parseServer(name) {
-    const re = new RegExp(
-      name + ':\\s*(\\d+)\\s*ms\\s+(?:gemiddeld|average)\\s*\\(min\\s*(\\d+)\\s*[–\\-]\\s*max\\s*(\\d+)\\s*ms,\\s*jitter\\s*(\\d+)\\s*ms\\)',
-      'i'
-    );
+    const re = new RegExp(name + ':\\s*(\\d+)\\s*ms\\s+(?:gemiddeld|average)\\s*\\(min\\s*(\\d+)\\s*[–\\-]\\s*max\\s*(\\d+)\\s*ms,\\s*jitter\\s*(\\d+)\\s*ms\\)', 'i');
     const m = tryMatch(latSec + '\n' + text, re);
-    if (!m) return null;
-    return { avg: +m[1], min: +m[2], max: +m[3], jitter: +m[4] };
+    return m ? { avg: +m[1], min: +m[2], max: +m[3], jitter: +m[4] } : null;
   }
-
   const voys       = parseServer('Voys');
   const osso       = parseServer('OSSO');
   const cloudflare = parseServer('Cloudflare');
 
-  // ── Terminal ping section ──
-  const pingSec = getSection(text, 'PING NAAR', 'PING TO', 'TERMINAL PING');
-
+  const pingSec  = getSection(text, 'PING NAAR', 'PING TO', 'TERMINAL PING');
   const pingAvg  = parseNum(pingSec, /(?:Gemiddeld|Average):\s*(\d+)\s*ms/i);
   const pingMin  = parseNum(pingSec, /Minimum:\s*(\d+)\s*ms/i);
   const pingMax  = parseNum(pingSec, /Maximum:\s*(\d+)\s*ms/i);
   const pingLoss = parseNum(pingSec, /(?:Pakketverlies|Packet loss):\s*(\d+(?:\.\d+)?)\s*%/i);
 
-  // ── NAT section ──
   const natSec = getSection(text, 'DOUBLE-NAT');
-
   const cgnatDetected = (() => {
-    const r = tryMatch(natSec + '\n' + text,
-      /Resultaat:\s*(Geen CGNAT|CGNAT gedetecteerd|No CGNAT|CGNAT detected)/i);
+    const r = tryMatch(natSec + '\n' + text, /Resultaat:\s*(Geen CGNAT|CGNAT gedetecteerd|No CGNAT|CGNAT detected)/i);
     if (!r) return null;
-    const val = r[1].toLowerCase();
-    return val.includes('geen') || val.includes('no') ? false : true;
+    const v = r[1].toLowerCase();
+    return v.includes('geen') || v.includes('no') ? false : true;
   })();
-
   const hopLines = (natSec.match(/Hop \d+:.+/gi) || []);
   const hopCount = hopLines.length;
-
-  // Count hops with private IPs to detect double NAT from traceroute
   function isPrivateIP(ip) {
     const p = ip.split('.').map(Number);
-    return p[0] === 10 ||
-           (p[0] === 172 && p[1] >= 16 && p[1] <= 31) ||
-           (p[0] === 192 && p[1] === 168);
+    return p[0] === 10 || (p[0] === 172 && p[1] >= 16 && p[1] <= 31) || (p[0] === 192 && p[1] === 168);
   }
-  const privateHopCount = hopLines.filter(line => {
-    const m = line.match(/:\s*(\d+\.\d+\.\d+\.\d+)/);
-    return m && isPrivateIP(m[1]);
-  }).length;
-  // null = no traceroute data; false = no double NAT; true = double NAT
+  const privateHopCount = hopLines.filter(l => { const m = l.match(/:\s*(\d+\.\d+\.\d+\.\d+)/); return m && isPrivateIP(m[1]); }).length;
   const doubleNatTraceroute = hopCount > 0 ? (privateHopCount >= 2) : null;
 
-  // ── Calls section ──
   const callSec = getSection(text, 'GESPREKKEN', 'CALLS (');
-
-  const avgMOS = parseNum(callSec,
+  const avgMOS  = parseNum(callSec,
     /Gemiddelde MOS alle gesprekken:\s*(\d+\.\d+)/i,
     /Average MOS all calls:\s*(\d+\.\d+)/i,
     /Average MOS[^:]*:\s*(\d+\.\d+)/i
   );
-
-  // Individual calls — search only the calls section to avoid duplicates
-  const callSrc = callSec.trim() ? callSec : text;
-  const callMatches = [...callSrc.matchAll(
-    /(?:Gesprek|Call)\s+(\d+):\s*([^|]+?)\s*\|\s*(\w+)\s*\|\s*(?:Duur|Duration):\s*(\S+)\s*\|\s*MOS:\s*(\S+)/gi
-  )];
+  const callSrc     = callSec.trim() ? callSec : text;
+  const callMatches = [...callSrc.matchAll(/(?:Gesprek|Call)\s+(\d+):\s*([^|]+?)\s*\|\s*(\w+)\s*\|\s*(?:Duur|Duration):\s*(\S+)\s*\|\s*MOS:\s*(\S+)/gi)];
   const calls = callMatches.map(m => ({
-    n: +m[1],
-    datetime: m[2]?.trim(),
-    direction: m[3],
-    duration: m[4],
+    n: +m[1], datetime: m[2]?.trim(), direction: m[3], duration: m[4],
     mos: m[5] === '?' ? null : parseFloat(m[5]),
   }));
 
-  // ── SIP section ──
-  const sipSec = getSection(text, 'SIP VERBINDING', 'SIP CONNECTION');
-
-  const sipResult = tryMatch(sipSec, /Resultaat:\s*(.+)|Result:\s*(.+)/i);
-  const sipStatus = sipResult ? (sipResult[1] ?? sipResult[2])?.trim() : null;
+  const sipSec   = getSection(text, 'SIP VERBINDING', 'SIP CONNECTION');
+  const sipMatch = tryMatch(sipSec, /Resultaat:\s*(.+)|Result:\s*(.+)/i);
+  const sipStatus = sipMatch ? (sipMatch[1] ?? sipMatch[2])?.trim() : null;
   const sipOK     = sipStatus ? sipStatus.includes('200') : null;
   const sipResp   = parseNum(sipSec, /(?:Reactietijd|Response time):\s*(\d+)\s*ms/i);
   const sipConn   = parseNum(sipSec, /(?:Verbindingstijd|Connection time):\s*(\d+)\s*ms/i);
 
-  // ── Console log analysis ──
-  const logSec = getSection(text, 'CONSOLE LOG');
-
-  const sentryBlocked   = /ERR_BLOCKED_BY_CLIENT/i.test(logSec);
-  const iceFailed       = /ICE.*fail|ice.*failed/i.test(logSec);
-  const soundFailed     = /sound.*failed|audio.*error|mediadevice.*error/i.test(logSec);
-  const mosUndefined    = /MOS stats for terminated.*undefined/i.test(logSec);
+  const logSec        = getSection(text, 'CONSOLE LOG');
+  const sentryBlocked = /ERR_BLOCKED_BY_CLIENT/i.test(logSec);
+  const iceFailed     = /ICE.*fail|ice.*failed/i.test(logSec);
+  const soundFailed   = /sound.*failed|audio.*error|mediadevice.*error/i.test(logSec);
+  const mosUndefined  = /MOS stats for terminated.*undefined/i.test(logSec);
   const sentryBlockCount = (logSec.match(/ERR_BLOCKED_BY_CLIENT/gi) || []).length;
-
-  // Client ID (present in every console log line, used to look up customer in portal)
   const clientIdMatch = (logSec + '\n' + text).match(/clientId:\s*(\d+)/i);
   const clientId = clientIdMatch ? +clientIdMatch[1] : null;
-
-  // Webphone version
-  const version = tryMatch(text, /version:\s*'(v[\d.]+[^']*)'/)?.[ 1] ?? null;
+  const version  = tryMatch(text, /version:\s*'(v[\d.]+[^']*)'/)?.[ 1] ?? null;
 
   return {
     timestamp, deviceType, deviceIP, version,
@@ -333,363 +327,141 @@ function parseReport(raw) {
   };
 }
 
-// ─────────────────────────────────────────────────────
-//  Badge helpers
-// ─────────────────────────────────────────────────────
-function dot(s)   { return `<span class="dot dot-${s} me-1"></span>`; }
-function badge(s, label) { return `<span class="status-badge badge-${s}">${dot(s)}${label}</span>`; }
-
-function latBadge(ms) {
-  if (ms == null) return badge('na', 'No data');
-  const s = statusOf(ms, T.latencyGood, T.latencyWarn);
-  return badge(s, ms + ' ms');
-}
-function jitterBadge(ms) {
-  if (ms == null) return badge('na', 'No data');
-  const s = statusOf(ms, T.jitterGood, T.jitterWarn);
-  return badge(s, 'Jitter ' + ms + ' ms');
-}
-function lossBadge(pct) {
-  if (pct == null) return badge('na', 'No data');
-  const s = statusOf(pct, T.lossWarn, T.lossBad);
-  return badge(s, pct + '% loss');
-}
-function mosBadge(mos) {
-  if (mos == null) return badge('na', 'No data');
-  const s = statusMOS(mos);
-  return badge(s, 'MOS ' + mos.toFixed(2));
-}
-
-// ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 //  Tips engine
-// ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
 function buildTips(d) {
   const tips = [];
 
-  // SIP failure — always first, it's the most critical
   if (d.sipOK === false) {
     tips.push({ level: 'bad', title: 'SIP Connection Failed', body:
       `The webphone could not connect to the Voys servers (result: ${d.sipStatus ?? 'unknown'}). ` +
-      `Ask the customer to: <ul class="mb-0 mt-1"><li>Check if a firewall or security software is blocking VoIP traffic (ports 5060–5061 TCP/UDP and UDP 10000–20000).</li>` +
-      `<li>Temporarily disable their firewall and retry.</li>` +
+      `Ask the customer to: <ul class="mb-0 mt-1">` +
+      `<li>Check if a firewall is blocking VoIP traffic (ports 5060–5061 TCP/UDP and UDP 10000–20000).</li>` +
+      `<li>Temporarily disable the firewall and retry.</li>` +
       `<li>Try a different network (e.g. mobile hotspot) to rule out ISP blocking.</li></ul>` });
   }
 
-  // ICE failure
   if (d.iceFailed) {
     tips.push({ level: 'bad', title: 'WebRTC / ICE Connection Error', body:
-      `ICE negotiation failed — the browser could not establish a peer-to-peer media path. ` +
-      `This often points to a strict firewall or CGNAT issue. ` +
+      `ICE negotiation failed — the browser could not establish a media path. ` +
+      `This often points to a strict firewall or CGNAT. ` +
       `Ask the customer to try a different network, or check if STUN/TURN ports are blocked.` });
   }
 
-  // Packet loss
   if (d.pingLoss != null && d.pingLoss >= T.lossBad) {
     tips.push({ level: 'bad', title: `High Packet Loss: ${d.pingLoss}%`, body:
-      `Packets are being lost on the network — this directly causes choppy or broken audio during calls. ` +
-      `Steps for the customer: <ul class="mb-0 mt-1">` +
+      `Packets are being lost — this directly causes choppy or broken audio. ` +
+      `<ul class="mb-0 mt-1">` +
       `<li>Restart the modem and router (unplug for 30 seconds).</li>` +
       `<li>Try a wired ethernet connection instead of WiFi.</li>` +
       `<li>Check all network cables for damage.</li>` +
-      `<li>If the issue persists, ask the customer to contact their ISP — the problem may be on their line.</li></ul>` });
+      `<li>If it persists, the customer should contact their ISP.</li></ul>` });
   } else if (d.pingLoss != null && d.pingLoss > 0) {
     tips.push({ level: 'warn', title: `Minor Packet Loss: ${d.pingLoss}%`, body:
-      `A small number of network packets are being dropped. This may cause occasional glitches. ` +
-      `Recommend restarting the router and using a wired connection if issues occur.` });
+      `A small number of packets are being dropped. May cause occasional glitches. ` +
+      `Recommend restarting the router and using a wired connection.` });
   }
 
-  // If terminal ping is good, browser latency figures are unreliable (browser overhead)
-  // and should not be raised as actionable warnings.
-  const terminalPingOK = d.pingAvg != null && d.pingAvg <= T.pingGood &&
-                         (d.pingLoss == null || d.pingLoss === 0);
+  const terminalPingOK = d.pingAvg != null && d.pingAvg <= T.pingGood && (d.pingLoss == null || d.pingLoss === 0);
 
-  // High latency to Voys
   if (d.voys != null) {
     if (d.voys.avg > T.latencyWarn) {
       if (terminalPingOK) {
-        tips.push({ level: 'info', title: `Browser Latency to Voys Elevated: ${d.voys.avg} ms (not critical)`, body:
-          `The browser measured high latency to Voys (${d.voys.avg} ms), but the terminal ping is excellent ` +
+        tips.push({ level: 'info', title: `Browser Latency to Voys: ${d.voys.avg} ms (not critical)`, body:
+          `Browser measured high latency (${d.voys.avg} ms) but the terminal ping is excellent ` +
           `(${d.pingAvg} ms, 0% loss). This discrepancy is usually browser overhead, not a real network issue. ` +
           `No action needed unless the customer reports actual call problems.` });
       } else {
         tips.push({ level: 'bad', title: `High Latency to Voys: ${d.voys.avg} ms`, body:
           `The connection to Voys servers is very slow. ` +
           `<ul class="mb-0 mt-1">` +
-          `<li>Is the customer using a <strong>VPN</strong>? VPNs can add 50–200 ms of latency — try disabling it.</li>` +
-          `<li>Recommend switching from WiFi to a <strong>wired ethernet</strong> connection.</li>` +
-          `<li>Check for other applications or devices consuming bandwidth (streaming, large downloads).</li></ul>` });
+          `<li>Is the customer using a <strong>VPN</strong>? VPNs can add 50–200 ms — try disabling it.</li>` +
+          `<li>Recommend switching to a <strong>wired ethernet</strong> connection.</li>` +
+          `<li>Check for other applications consuming bandwidth (streaming, large downloads).</li></ul>` });
       }
     } else if (d.voys.avg > T.latencyGood && !terminalPingOK) {
       tips.push({ level: 'warn', title: `Elevated Latency to Voys: ${d.voys.avg} ms`, body:
-        `Latency is somewhat elevated. Calls may still work fine, but audio quality could be affected under load. ` +
+        `Latency is somewhat elevated. Calls may still work fine, but quality could be affected under load. ` +
         `Suggest a wired connection for a more stable experience.` });
     }
   }
 
-  // High jitter
-  const worstJitter = Math.max(
-    d.voys?.jitter ?? 0,
-    d.osso?.jitter ?? 0,
-    d.cloudflare?.jitter ?? 0
-  );
+  const worstJitter = Math.max(d.voys?.jitter ?? 0, d.osso?.jitter ?? 0, d.cloudflare?.jitter ?? 0);
   if (!terminalPingOK) {
     if (worstJitter > T.jitterWarn) {
       tips.push({ level: 'bad', title: `High Jitter: ${worstJitter} ms`, body:
-        `The connection is unstable (high jitter) — this typically causes robotic or choppy audio. ` +
+        `Unstable connection — typically causes robotic or choppy audio. ` +
         `<ul class="mb-0 mt-1">` +
-        `<li>Switch to a <strong>wired ethernet connection</strong> — WiFi jitter is the #1 cause of VoIP audio issues.</li>` +
+        `<li>Switch to a <strong>wired ethernet connection</strong> — WiFi jitter is the #1 cause of VoIP issues.</li>` +
         `<li>Restart the router and modem.</li>` +
-        `<li>Move the device closer to the router if WiFi must be used.</li>` +
-        `<li>Check for other wireless devices causing interference (microwaves, cordless phones, neighboring networks).</li></ul>` });
+        `<li>Move closer to the router if WiFi must be used.</li>` +
+        `<li>Check for wireless interference (microwaves, cordless phones, neighboring networks).</li></ul>` });
     } else if (worstJitter > T.jitterGood) {
       tips.push({ level: 'warn', title: `Moderate Jitter: ${worstJitter} ms`, body:
         `Some network instability detected. A wired connection is recommended for the best call quality.` });
     }
   }
 
-  // Double NAT — prefer traceroute result over CGNAT flag
   if (d.doubleNatTraceroute === true) {
     tips.push({ level: 'warn', title: `Double NAT Detected (${d.privateHopCount} private hops in traceroute)`, body:
-      `The traceroute shows multiple private IP address hops, meaning the customer is behind two NAT layers. ` +
-      `This can cause issues with incoming calls or intermittent drops. ` +
+      `The traceroute shows multiple private IP hops — the customer is behind two NAT layers. ` +
       `<ul class="mb-0 mt-1">` +
-      `<li>Ask the customer if they have a modem <em>and</em> a separate router — both doing NAT is a common cause.</li>` +
-      `<li>Advise them to put the ISP modem in <strong>bridge/passthrough mode</strong> so only one device does NAT.</li>` +
-      `<li>Alternatively, contact their ISP and request a <strong>public IP address</strong>.</li>` +
-      `<li>Ask if the ISP modem has a <strong>SIP ALG</strong> setting — if so, it should be disabled.</li></ul>` });
+      `<li>Ask if they have a modem <em>and</em> a separate router — both doing NAT is a common cause.</li>` +
+      `<li>Put the ISP modem in <strong>bridge/passthrough mode</strong> so only one device does NAT.</li>` +
+      `<li>Alternatively, contact the ISP and request a <strong>public IP address</strong>.</li>` +
+      `<li>Ask if the ISP modem has a <strong>SIP ALG</strong> setting — if so, disable it.</li></ul>` });
   } else if (d.doubleNatTraceroute === null && d.cgnatDetected === true) {
-    // No traceroute data — fall back to CGNAT flag
     tips.push({ level: 'warn', title: 'CGNAT Detected', body:
-      `The customer appears to be behind CGNAT (Carrier-Grade NAT) — their ISP shares a public IP across multiple customers. ` +
-      `This can cause issues with incoming calls. ` +
+      `The customer appears to be behind CGNAT — their ISP shares a public IP across multiple customers. ` +
       `<ul class="mb-0 mt-1">` +
-      `<li>Advise the customer to contact their ISP and request a <strong>dedicated public IP address</strong>.</li>` +
-      `<li>Ask if the ISP modem has a <strong>SIP ALG</strong> setting — if so, it should be disabled.</li></ul>` });
+      `<li>Advise the customer to contact their ISP and request a <strong>dedicated public IP</strong>.</li>` +
+      `<li>Ask if the ISP modem has a <strong>SIP ALG</strong> setting — if so, disable it.</li></ul>` });
   }
 
-  // Low MOS
   if (d.avgMOS != null && d.avgMOS < T.mosWarn) {
     tips.push({ level: 'bad', title: `Poor Call Quality (MOS ${d.avgMOS.toFixed(2)})`, body:
-      `The average call quality score is low (MOS below 3.5 is considered poor). ` +
-      `Look at the latency, jitter and packet loss metrics above to find the root cause. ` +
-      `MOS drops are almost always caused by an unstable or congested network connection.` });
+      `Average call quality score is low (below 3.5 is considered poor). ` +
+      `Look at latency, jitter and packet loss metrics to find the root cause.` });
   } else if (d.avgMOS != null && d.avgMOS < T.mosGood) {
     tips.push({ level: 'warn', title: `Fair Call Quality (MOS ${d.avgMOS.toFixed(2)})`, body:
-      `Call quality is acceptable but not optimal. Monitor for customer complaints about audio quality. ` +
-      `A wired connection may improve the score.` });
+      `Call quality is acceptable but not optimal. A wired connection may improve the score.` });
   }
 
-  // Calls with no MOS data
   if (d.mosUndefined) {
     tips.push({ level: 'info', title: 'Call Without Quality Data', body:
-      `One or more calls ended before quality metrics could be collected. ` +
-      `This usually means the call was very short (under 5 seconds) or was rejected/dropped before connecting.` });
+      `One or more calls ended before MOS data could be collected. Usually a very short call or rejected before connecting.` });
   }
 
-  // Sound device issues
   if (d.soundFailed) {
     tips.push({ level: 'bad', title: 'Audio Device Error Detected', body:
       `The console log shows an audio device error. ` +
-      `Ask the customer to: <ul class="mb-0 mt-1">` +
-      `<li>Check that their headset or microphone is properly connected.</li>` +
-      `<li>Select the correct audio device in the webphone settings (gear icon → Audio).</li>` +
+      `<ul class="mb-0 mt-1">` +
+      `<li>Check that the headset/microphone is properly connected.</li>` +
+      `<li>Select the correct audio device in webphone settings (gear → Audio).</li>` +
       `<li>Try unplugging and re-plugging the headset.</li>` +
       `<li>Test the audio device in another application to confirm it works.</li></ul>` });
   }
 
-  // Sentry blocked — informational only
   if (d.sentryBlocked) {
     tips.push({ level: 'info', title: 'Error Reporting Blocked (Ad Blocker)', body:
-      `Sentry error reporting is being blocked (${d.sentryBlockCount} requests blocked). ` +
-      `This is caused by an ad blocker or privacy extension and is <strong>not critical</strong> — ` +
-      `it does not affect call quality. You can ignore this.` });
+      `Sentry is blocked (${d.sentryBlockCount}×) — caused by an ad blocker or privacy extension. ` +
+      `<strong>Not critical</strong> and does not affect call quality. You can ignore this.` });
   }
 
-  // All OK
   if (tips.length === 0) {
     tips.push({ level: 'ok', title: 'Everything Looks Good', body:
-      `All metrics are within normal ranges. If the customer is still experiencing issues, ` +
-      `consider: checking the call quality during peak usage hours, ensuring the browser is up to date, ` +
-      `or collecting a new report during an active problem.` });
+      `All metrics are within normal ranges. If the customer still experiences issues, ` +
+      `collect a new report during an active problem or check during peak usage hours.` });
   }
 
   return tips;
 }
 
-// ─────────────────────────────────────────────────────
-//  Renderer
-// ─────────────────────────────────────────────────────
-function renderResults(d) {
-  const tips = buildTips(d);
-
-  // Overall status
-  const overallStatus = tips.some(t => t.level === 'bad')  ? 'bad'
-                      : tips.some(t => t.level === 'warn') ? 'warn'
-                      : 'ok';
-  const overallIcons  = { ok: '✅', warn: '⚠️', bad: '❌' };
-  const overallLabels = {
-    ok:   'No issues found — all metrics are within normal ranges.',
-    warn: 'Some issues detected — review the tips below for guidance.',
-    bad:  'Critical issues detected — action required.',
-  };
-
-  // ── Overall bar ──
-  let html = `
-  <div class="overall-bar overall-${overallStatus} mb-4">
-    <span class="overall-icon">${overallIcons[overallStatus]}</span>
-    <div class="flex-grow-1">
-      <div class="fw-bold">${overallStatus === 'ok' ? 'All Good' : overallStatus === 'warn' ? 'Warnings Found' : 'Issues Detected'}</div>
-      <div style="font-size:.82rem;opacity:.8">${overallLabels[overallStatus]}</div>
-    </div>
-    ${d.clientId ? `<a href="https://partner.voys.co/client/${d.clientId}" target="_blank" rel="noopener" class="btn btn-primary btn-sm text-nowrap">Open customer in portal →</a>` : ''}
-  </div>`;
-
-  // ── Device info row ──
-  html += `<div class="section-label">Device &amp; Report Info</div>
-  <div class="row g-2 mb-4">
-    <div class="col-6 col-md-3">${metricCard('Device Type', d.deviceType ?? '—')}</div>
-    <div class="col-6 col-md-3">${metricCard('IP Address', d.deviceIP ?? 'Not determined')}</div>
-    <div class="col-6 col-md-3">${metricCard('Webphone Version', d.version ?? '—')}</div>
-    <div class="col-6 col-md-3">${metricCard('Report Generated', d.timestamp ?? '—')}</div>
-  </div>`;
-
-  // ── Browser latency ──
-  html += `<div class="section-label">Browser Latency (Ping to Servers)</div>
-  <div class="row g-2 mb-4">
-    ${serverCard('Voys', d.voys)}
-    ${serverCard('OSSO', d.osso)}
-    ${serverCard('Cloudflare', d.cloudflare)}
-  </div>`;
-
-  // ── Terminal ping ──
-  const pingStatus = worstStatus(
-    statusOf(d.pingAvg, T.pingGood, T.pingWarn),
-    statusOf(d.pingLoss, T.lossWarn, T.lossBad)
-  );
-  html += `<div class="section-label">Terminal Ping (ha.voys.nl)</div>
-  <div class="row g-2 mb-4">
-    <div class="col-6 col-md-3">${metricCard('Avg Ping', d.pingAvg != null ? d.pingAvg + ' ms' : '—', statusOf(d.pingAvg, T.pingGood, T.pingWarn), d.pingMin != null ? `min ${d.pingMin} ms · max ${d.pingMax} ms` : '')}</div>
-    <div class="col-6 col-md-3">${metricCard('Packet Loss', d.pingLoss != null ? d.pingLoss + '%' : '—', statusOf(d.pingLoss, T.lossWarn, T.lossBad))}</div>
-  </div>`;
-
-  // ── NAT ──
-  const natStatus = d.doubleNatTraceroute === true  ? 'warn'
-                  : d.doubleNatTraceroute === false  ? 'ok'
-                  : d.cgnatDetected === true          ? 'warn'
-                  : d.cgnatDetected === false         ? 'ok'
-                  : 'na';
-  const natLabel  = d.doubleNatTraceroute === true  ? `Double NAT (${d.privateHopCount} private hops)`
-                  : d.doubleNatTraceroute === false  ? 'No Double NAT ✓'
-                  : d.cgnatDetected === true          ? 'CGNAT Detected'
-                  : d.cgnatDetected === false         ? 'No CGNAT ✓'
-                  : '—';
-  const natSub    = d.hopCount > 0 ? `Traceroute: ${d.hopCount} hops` : null;
-  html += `<div class="section-label">Network / NAT</div>
-  <div class="row g-2 mb-4">
-    <div class="col-6 col-md-3">${metricCard('Double NAT', natLabel, natStatus, natSub)}</div>
-  </div>`;
-
-  // ── Calls ──
-  html += `<div class="section-label">Call Quality (MOS)</div>`;
-
-  if (d.calls.length > 0) {
-    html += `<div class="card mb-4"><div class="table-responsive">
-    <table class="table table-sm table-hover mb-0" style="font-size:.85rem">
-      <thead><tr style="font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;border-bottom:2px solid rgba(0,0,0,.08)">
-        <th class="ps-3" style="width:2rem">#</th>
-        <th style="width:6rem">Time</th>
-        <th>Direction</th>
-        <th>Duration</th>
-        <th>MOS</th>
-        <th>Quality</th>
-      </tr></thead><tbody>`;
-
-    d.calls.forEach(c => {
-      const isOut    = c.direction === 'Uitgaand' || c.direction.toLowerCase().includes('out');
-      const dirLabel = isOut ? 'Outgoing' : 'Incoming';
-      const dirIcon  = isOut ? '↗' : '↙';
-      const timeStr  = (() => {
-        if (!c.datetime || c.datetime.trim() === '?' || c.datetime.trim() === '? ?') return '—';
-        const parts = c.datetime.trim().split(' ');
-        return parts.length >= 2 ? parts[1] : c.datetime.trim();
-      })();
-      const mosStatus = statusMOS(c.mos);
-      const qualLabel = c.mos == null ? 'No data'
-                      : c.mos >= 4.0  ? 'Excellent'
-                      : c.mos >= 3.5  ? 'Good'
-                      : c.mos >= 3.0  ? 'Fair'
-                      : 'Poor';
-      html += `<tr>
-        <td class="ps-3 text-muted fw-semibold">${c.n}</td>
-        <td class="text-muted">${timeStr}</td>
-        <td><span style="opacity:.5;margin-right:4px">${dirIcon}</span>${dirLabel}</td>
-        <td>${c.duration !== '?' ? c.duration : '—'}</td>
-        <td><span class="dot dot-${mosStatus} me-1"></span><strong>${c.mos != null ? c.mos.toFixed(2) : '—'}</strong></td>
-        <td><span class="status-badge badge-${mosStatus}" style="padding:2px 10px;font-size:.7rem">${qualLabel}</span></td>
-      </tr>`;
-    });
-
-    if (d.avgMOS != null) {
-      const s = statusMOS(d.avgMOS);
-      html += `<tr style="border-top:2px solid rgba(0,0,0,.08)">
-        <td class="ps-3" colspan="4" style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;vertical-align:middle">Average MOS</td>
-        <td><span class="dot dot-${s} me-1"></span><strong>${d.avgMOS.toFixed(2)}</strong></td>
-        <td style="font-size:.72rem;color:#6c757d">Scale 1–5</td>
-      </tr>`;
-    }
-
-    html += `</tbody></table></div></div>`;
-  } else {
-    html += `<div class="row g-2 mb-4">
-      <div class="col-6 col-md-3">${metricCard('Average MOS', d.avgMOS != null ? d.avgMOS.toFixed(2) : '—', statusMOS(d.avgMOS), 'Scale: 1 (bad) – 5 (perfect)')}</div>
-    </div>`;
-  }
-
-  // ── SIP ──
-  const sipStatusLevel = d.sipOK === true ? 'ok' : d.sipOK === false ? 'bad' : 'na';
-  html += `<div class="section-label">SIP Connection Test</div>
-  <div class="row g-2 mb-4">
-    <div class="col-6 col-md-3">${metricCard('SIP Result', d.sipStatus ?? '—', sipStatusLevel)}</div>
-    <div class="col-6 col-md-3">${metricCard('Response Time', d.sipResp != null ? d.sipResp + ' ms' : '—')}</div>
-    <div class="col-6 col-md-3">${metricCard('Connection Time', d.sipConn != null ? d.sipConn + ' ms' : '—')}</div>
-  </div>`;
-
-  // ── Console log notes ──
-  const logItems = [
-    d.iceFailed       && { s: 'bad',  t: 'ICE failure in log' },
-    d.soundFailed     && { s: 'bad',  t: 'Audio device error in log' },
-    d.mosUndefined    && { s: 'warn', t: 'Call with no MOS data' },
-    d.sentryBlocked   && { s: 'info', t: `Sentry blocked ×${d.sentryBlockCount} (ad blocker)` },
-  ].filter(Boolean);
-
-  if (logItems.length > 0) {
-    html += `<div class="section-label">Console Log</div>
-    <div class="d-flex flex-wrap gap-2 mb-4">`;
-    logItems.forEach(item => {
-      html += `<span class="status-badge badge-${item.s}">${dot(item.s)}${item.t}</span>`;
-    });
-    html += `</div>`;
-  }
-
-  // ── Tips ──
-  html += `<div class="section-label d-flex justify-content-between align-items-center">
-    <span>Customer Tips</span>
-    <button class="btn btn-outline-primary btn-sm btn-copy" onclick="copyTips()">Copy tips as text</button>
-  </div>`;
-
-  tips.forEach(tip => {
-    html += `<div class="tip-card tip-${tip.level}">
-      <div class="tip-label">${{ bad:'Action required', warn:'Attention', info:'Note', ok:'All good' }[tip.level]}</div>
-      <div class="fw-semibold" style="font-size:.875rem;margin-top:2px">${tip.title}</div>
-      <div class="tip-body text-muted">${tip.body}</div>
-    </div>`;
-  });
-
-  const el = document.getElementById('results');
-  el.innerHTML = html;
-  el.classList.remove('d-none');
-  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
+// ═══════════════════════════════════════════════════════
+//  HTML helpers
+// ═══════════════════════════════════════════════════════
+function dot(s) { return `<span class="dot dot-${s} me-1"></span>`; }
 
 function metricCard(title, value, status, sub) {
   const s = status ?? 'na';
@@ -704,75 +476,444 @@ function metricCard(title, value, status, sub) {
 }
 
 function serverCard(name, data) {
-  if (!data) {
-    return `<div class="col-6 col-md-4">${metricCard(name + ' Latency', '—', 'na', 'No data')}</div>`;
-  }
-  const latStatus    = statusOf(data.avg, T.latencyGood, T.latencyWarn);
-  const jitterStatus = statusOf(data.jitter, T.jitterGood, T.jitterWarn);
-  const worst        = worstStatus(latStatus, jitterStatus);
-  const sub          = `min ${data.min} · max ${data.max} · jitter ${data.jitter} ms`;
-  return `<div class="col-6 col-md-4">${metricCard(name, data.avg + ' ms avg', worst, sub)}</div>`;
+  if (!data) return `<div class="col-6 col-md-4">${metricCard(name, '—', 'na', 'No data')}</div>`;
+  const ls = statusOf(data.avg, T.latencyGood, T.latencyWarn);
+  const js = statusOf(data.jitter, T.jitterGood, T.jitterWarn);
+  return `<div class="col-6 col-md-4">${metricCard(name, data.avg + ' ms avg', worstStatus(ls, js), `min ${data.min} · max ${data.max} · jitter ${data.jitter} ms`)}</div>`;
 }
 
-function worstStatus(...s) {
-  if (s.includes('bad'))  return 'bad';
-  if (s.includes('warn')) return 'warn';
-  if (s.includes('ok'))   return 'ok';
-  return 'na';
-}
+// ═══════════════════════════════════════════════════════
+//  Build individual report HTML (returns string)
+// ═══════════════════════════════════════════════════════
+function buildIndividualHtml(d) {
+  const tips   = buildTips(d);
+  const status = tips.some(t => t.level === 'bad') ? 'bad' : tips.some(t => t.level === 'warn') ? 'warn' : 'ok';
+  const icons  = { ok:'✅', warn:'⚠️', bad:'❌' };
+  const labels = { ok:'No issues found.', warn:'Some issues — see tips below.', bad:'Critical issues — action required.' };
+  const stLabels = { ok:'All Good', warn:'Warnings Found', bad:'Issues Detected' };
 
-// ─────────────────────────────────────────────────────
-//  Copy tips as plain text
-// ─────────────────────────────────────────────────────
-function copyTips() {
-  const tipCards = document.querySelectorAll('.tip-card');
-  let text = 'VOYS REPORT ANALYZER — CUSTOMER TIPS\n\n';
-  tipCards.forEach(card => {
-    const level = card.querySelector('.tip-label')?.textContent ?? '';
-    const title = card.querySelector('.fw-semibold')?.textContent ?? '';
-    const body  = card.querySelector('.tip-body')?.innerText ?? '';
-    text += `[${level.toUpperCase()}] ${title}\n${body}\n\n`;
-  });
-  navigator.clipboard.writeText(text.trim())
-    .then(() => {
-      const btn = document.querySelector('.btn-copy');
-      const orig = btn.textContent;
-      btn.textContent = 'Copied!';
-      setTimeout(() => { btn.textContent = orig; }, 2000);
+  let h = `<div class="p-3">`;
+
+  // Overall + portal button
+  h += `<div class="overall-bar overall-${status} mb-3">
+    <span style="font-size:1.3rem;line-height:1">${icons[status]}</span>
+    <div class="flex-grow-1">
+      <div class="fw-bold" style="font-size:.9rem">${stLabels[status]}</div>
+      <div style="font-size:.78rem;opacity:.8">${labels[status]}</div>
+    </div>
+    ${d.clientId ? `<a href="https://partner.voys.co/client/${d.clientId}" target="_blank" rel="noopener" class="btn btn-primary btn-sm text-nowrap">Open in portal →</a>` : ''}
+  </div>`;
+
+  // Device info
+  h += `<div class="section-label">Device &amp; Report Info</div>
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">${metricCard('Device Type', d.deviceType ?? '—')}</div>
+    <div class="col-6 col-md-3">${metricCard('IP Address', d.deviceIP ?? 'Not determined')}</div>
+    <div class="col-6 col-md-3">${metricCard('Version', d.version ?? '—')}</div>
+    <div class="col-6 col-md-3">${metricCard('Generated', d.timestamp ?? '—')}</div>
+  </div>`;
+
+  // Browser latency
+  h += `<div class="section-label">Browser Latency (Ping to Servers)</div>
+  <div class="row g-2 mb-3">
+    ${serverCard('Voys', d.voys)}${serverCard('OSSO', d.osso)}${serverCard('Cloudflare', d.cloudflare)}
+  </div>`;
+
+  // Terminal ping
+  h += `<div class="section-label">Terminal Ping (ha.voys.nl)</div>
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">${metricCard('Avg Ping', d.pingAvg != null ? d.pingAvg+' ms' : '—', statusOf(d.pingAvg, T.pingGood, T.pingWarn), d.pingMin != null ? `min ${d.pingMin} · max ${d.pingMax} ms` : '')}</div>
+    <div class="col-6 col-md-3">${metricCard('Packet Loss', d.pingLoss != null ? d.pingLoss+'%' : '—', statusOf(d.pingLoss, T.lossWarn, T.lossBad))}</div>
+  </div>`;
+
+  // NAT
+  const ns = d.doubleNatTraceroute === true ? 'warn' : d.doubleNatTraceroute === false ? 'ok' : d.cgnatDetected === true ? 'warn' : d.cgnatDetected === false ? 'ok' : 'na';
+  const nl = d.doubleNatTraceroute === true  ? `Double NAT (${d.privateHopCount} private hops)`
+           : d.doubleNatTraceroute === false  ? 'No Double NAT ✓'
+           : d.cgnatDetected === true          ? 'CGNAT Detected'
+           : d.cgnatDetected === false         ? 'No CGNAT ✓' : '—';
+  h += `<div class="section-label">Network / NAT</div>
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">${metricCard('Double NAT', nl, ns, d.hopCount > 0 ? `Traceroute: ${d.hopCount} hops` : null)}</div>
+  </div>`;
+
+  // Calls table
+  h += `<div class="section-label">Call Quality (MOS)</div>`;
+  if (d.calls.length > 0) {
+    h += `<div class="card mb-3"><div class="table-responsive">
+    <table class="table table-sm table-hover mb-0" style="font-size:.84rem">
+      <thead><tr style="font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;border-bottom:2px solid rgba(0,0,0,.08)">
+        <th class="ps-3" style="width:2rem">#</th><th style="width:5.5rem">Time</th>
+        <th>Direction</th><th>Duration</th><th>MOS</th><th>Quality</th>
+      </tr></thead><tbody>`;
+    d.calls.forEach(c => {
+      const out = c.direction === 'Uitgaand' || c.direction.toLowerCase().includes('out');
+      const t   = (() => { if (!c.datetime || /^\?/.test(c.datetime.trim())) return '—'; const p = c.datetime.trim().split(' '); return p.length >= 2 ? p[1] : c.datetime.trim(); })();
+      const ms  = statusMOS(c.mos);
+      const ql  = c.mos == null ? 'No data' : c.mos >= 4 ? 'Excellent' : c.mos >= 3.5 ? 'Good' : c.mos >= 3 ? 'Fair' : 'Poor';
+      h += `<tr>
+        <td class="ps-3 text-muted fw-semibold">${c.n}</td>
+        <td class="text-muted">${t}</td>
+        <td><span style="opacity:.4">${out ? '↗' : '↙'}</span> ${out ? 'Outgoing' : 'Incoming'}</td>
+        <td>${c.duration !== '?' ? c.duration : '—'}</td>
+        <td><span class="dot dot-${ms} me-1"></span><strong>${c.mos != null ? c.mos.toFixed(2) : '—'}</strong></td>
+        <td><span class="status-badge badge-${ms}" style="padding:2px 8px;font-size:.68rem">${ql}</span></td>
+      </tr>`;
     });
+    if (d.avgMOS != null) {
+      const s = statusMOS(d.avgMOS);
+      h += `<tr style="border-top:2px solid rgba(0,0,0,.08)">
+        <td class="ps-3" colspan="4" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;vertical-align:middle">Average MOS</td>
+        <td><span class="dot dot-${s} me-1"></span><strong>${d.avgMOS.toFixed(2)}</strong></td>
+        <td style="font-size:.7rem;color:#6c757d">Scale 1–5</td>
+      </tr>`;
+    }
+    h += `</tbody></table></div></div>`;
+  } else {
+    h += `<div class="row g-2 mb-3"><div class="col-6 col-md-3">${metricCard('Average MOS', d.avgMOS != null ? d.avgMOS.toFixed(2) : '—', statusMOS(d.avgMOS), 'Scale: 1–5')}</div></div>`;
+  }
+
+  // SIP
+  const sl = d.sipOK === true ? 'ok' : d.sipOK === false ? 'bad' : 'na';
+  h += `<div class="section-label">SIP Connection Test</div>
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">${metricCard('Result', d.sipStatus ?? '—', sl)}</div>
+    <div class="col-6 col-md-3">${metricCard('Response Time', d.sipResp != null ? d.sipResp+' ms' : '—')}</div>
+    <div class="col-6 col-md-3">${metricCard('Connection Time', d.sipConn != null ? d.sipConn+' ms' : '—')}</div>
+  </div>`;
+
+  // Console log notes
+  const logItems = [
+    d.iceFailed     && { s:'bad',  t:'ICE failure in log' },
+    d.soundFailed   && { s:'bad',  t:'Audio device error' },
+    d.mosUndefined  && { s:'warn', t:'Call with no MOS data' },
+    d.sentryBlocked && { s:'info', t:`Sentry blocked ×${d.sentryBlockCount}` },
+  ].filter(Boolean);
+  if (logItems.length > 0) {
+    h += `<div class="section-label">Console Log</div><div class="d-flex flex-wrap gap-2 mb-3">`;
+    logItems.forEach(i => { h += `<span class="status-badge badge-${i.s}">${dot(i.s)}${i.t}</span>`; });
+    h += `</div>`;
+  }
+
+  // Tips
+  h += `<div class="section-label">Customer Tips</div>`;
+  tips.forEach(tip => {
+    const lvl = { bad:'Action required', warn:'Attention', info:'Note', ok:'All good' }[tip.level];
+    h += `<div class="tip-card tip-${tip.level}"><div class="tip-label">${lvl}</div>
+      <div class="fw-semibold" style="font-size:.875rem;margin-top:2px">${tip.title}</div>
+      <div class="tip-body text-muted">${tip.body}</div></div>`;
+  });
+
+  h += `</div>`;
+  return h;
 }
 
-// ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+//  Reports list renderer
+// ═══════════════════════════════════════════════════════
+function renderReportsList() {
+  const section = document.getElementById('reportsSection');
+  const list    = document.getElementById('reportsList');
+
+  if (reports.length === 0) { section.classList.add('d-none'); return; }
+  section.classList.remove('d-none');
+  document.getElementById('reportsCount').textContent = `Added Reports (${reports.length})`;
+
+  // Preserve open/closed state of existing rows
+  const openIds = new Set(
+    reports.map(r => r.id).filter(id => {
+      const el = document.getElementById(`detail-${id}`);
+      return el && !el.classList.contains('d-none');
+    })
+  );
+
+  const stLabels = { ok:'All Good', warn:'Warnings', bad:'Issues' };
+
+  list.innerHTML = reports.map(r => {
+    const label      = `${r.parsed.deviceType ?? 'Unknown'} · ${formatLabel(r.parsed.timestamp)}`;
+    const clientInfo = r.parsed.clientId ? ` <span style="opacity:.5">· ID ${r.parsed.clientId}</span>` : '';
+    const isOpen     = openIds.has(r.id);
+    return `<div class="report-row fade-in" id="row-${r.id}">
+      <div class="report-row-header" onclick="toggleReport(${r.id})">
+        <span class="dot dot-${r.status}" style="width:10px;height:10px"></span>
+        <span class="flex-grow-1 fw-semibold" style="font-size:.85rem">${label}${clientInfo}</span>
+        <span class="status-badge badge-${r.status}" style="font-size:.68rem;padding:2px 10px">${stLabels[r.status]}</span>
+        <button class="btn-icon btn btn-outline-secondary" id="toggle-btn-${r.id}"
+                onclick="event.stopPropagation();toggleReport(${r.id})" title="Expand / collapse">${isOpen ? '▲' : '▼'}</button>
+        <button class="btn-icon btn btn-outline-danger"
+                onclick="event.stopPropagation();deleteReport(${r.id})" title="Remove">✕</button>
+      </div>
+      <div class="${isOpen ? '' : 'd-none'} report-row-detail" id="detail-${r.id}">
+        ${buildIndividualHtml(r.parsed)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  Trends & cross-validation
+// ═══════════════════════════════════════════════════════
+function renderTrendsSection() {
+  const section = document.getElementById('trendsSection');
+  if (reports.length === 0) { section.classList.add('d-none'); section.innerHTML = ''; return; }
+  section.classList.remove('d-none');
+
+  const sorted = [...reports].sort((a, b) => {
+    const ta = parseTimestamp(a.parsed.timestamp), tb = parseTimestamp(b.parsed.timestamp);
+    return (ta && tb) ? ta - tb : 0;
+  });
+
+  let html = '';
+
+  // ── Cross-validation (≥2 reports) ──
+  if (reports.length >= 2) {
+    html += buildCrossValidationHtml(sorted);
+  }
+
+  // ── Charts (≥2 reports with any metric data) ──
+  if (reports.length >= 2) {
+    const labels = sorted.map(r => formatLabel(r.parsed.timestamp));
+    html += `<div class="section-label mt-3">Trends Over Time</div>
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-md-6"><div class="card chart-card" id="wrap-latency">
+        <div class="chart-title">Latency — Voys (ms)</div>
+        <canvas id="chartLatency"></canvas>
+      </div></div>
+      <div class="col-12 col-md-6"><div class="card chart-card" id="wrap-jitter">
+        <div class="chart-title">Jitter — worst (ms)</div>
+        <canvas id="chartJitter"></canvas>
+      </div></div>
+      <div class="col-12 col-md-6"><div class="card chart-card" id="wrap-sip">
+        <div class="chart-title">SIP Response Time (ms)</div>
+        <canvas id="chartSIP"></canvas>
+      </div></div>
+      <div class="col-12 col-md-6"><div class="card chart-card" id="wrap-mos">
+        <div class="chart-title">Call Quality — MOS</div>
+        <canvas id="chartMOS"></canvas>
+      </div></div>
+    </div>`;
+    section.innerHTML = html;
+    renderCharts(sorted, labels);
+  } else {
+    section.innerHTML = html;
+  }
+}
+
+function buildCrossValidationHtml(sorted) {
+  const issues = [];
+
+  // ClientId check (webphone)
+  const withCid = sorted.filter(r => r.parsed.clientId);
+  if (withCid.length >= 2) {
+    const unique = [...new Set(withCid.map(r => r.parsed.clientId))];
+    if (unique.length > 1) {
+      issues.push({ level: 'bad', msg:
+        `Reports have <strong>different Client IDs</strong> (${unique.join(', ')}) — these reports may not be from the same customer!` });
+    }
+  }
+
+  // IP check (hardphone / devices where IP is determined)
+  const validIP = r => {
+    const ip = r.parsed.deviceIP;
+    return ip && !/niet|not\s+det/i.test(ip) && ip !== '—' && /\d+\.\d+/.test(ip);
+  };
+  const withIP = sorted.filter(validIP);
+  if (withIP.length >= 2) {
+    const unique = [...new Set(withIP.map(r => r.parsed.deviceIP.trim()))];
+    if (unique.length > 1) {
+      const subnets = [...new Set(unique.map(ip => ip.split('.').slice(0,3).join('.')))];
+      if (subnets.length > 1) {
+        issues.push({ level: 'bad', msg:
+          `Reports have IP addresses from <strong>different subnets</strong> (${unique.join(', ')}). These reports may be from different customers or locations!` });
+      } else {
+        issues.push({ level: 'warn', msg:
+          `Reports have different IP addresses (${unique.join(', ')}) but are on the same /24 subnet. Likely the same customer, possibly different devices.` });
+      }
+    }
+  }
+
+  if (issues.length === 0) {
+    return `<div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded" style="background:rgba(25,135,84,.08);border:1px solid rgba(25,135,84,.2);font-size:.82rem">
+      <span class="dot dot-ok"></span>
+      <span class="fw-semibold" style="color:#157347">All reports appear to be from the same customer.</span>
+    </div>`;
+  }
+
+  return issues.map(i => `<div class="tip-card tip-${i.level} mb-2" style="font-size:.84rem">
+    <div class="tip-label">${i.level === 'bad' ? 'Warning' : 'Note'}</div>
+    <div class="tip-body">${i.msg}</div>
+  </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  Chart.js — threshold line plugin
+// ═══════════════════════════════════════════════════════
+const thresholdPlugin = {
+  id: 'thresholds',
+  afterDraw(chart) {
+    const lines = chart.options._thresholds;
+    if (!lines?.length) return;
+    const { ctx, chartArea, scales: { y } } = chart;
+    lines.forEach(({ value, color }) => {
+      const yPx = y.getPixelForValue(value);
+      if (yPx < chartArea.top - 1 || yPx > chartArea.bottom + 1) return;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(chartArea.left, yPx);
+      ctx.lineTo(chartArea.right, yPx);
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+};
+
+function makeChart(id, wrapId, labels, data, color, fillColor, unit, thresholds, yMin, yMax) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+
+  const wrap = document.getElementById(wrapId);
+  if (!data.some(v => v != null)) { if (wrap) wrap.style.display = 'none'; return; }
+  if (wrap) wrap.style.display = '';
+
+  chartInstances[id] = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: color,
+        backgroundColor: fillColor,
+        borderWidth: 2,
+        tension: 0.35,
+        pointRadius: 5,
+        pointHoverRadius: 8,
+        pointBackgroundColor: color,
+        fill: true,
+        spanGaps: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 300 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.parsed.y != null ? `${ctx.parsed.y}${unit ? ' '+unit : ''}` : 'No data'
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { size: 10, family: 'Montserrat, sans-serif' }, maxRotation: 25 }
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { size: 10, family: 'Montserrat, sans-serif' }, callback: v => v + (unit ? ' '+unit : '') },
+          min: yMin ?? 0,
+          ...(yMax != null ? { max: yMax } : {}),
+        }
+      },
+      _thresholds: thresholds || [],
+    },
+    plugins: [thresholdPlugin],
+  });
+}
+
+function renderCharts(sorted, labels) {
+  makeChart('chartLatency', 'wrap-latency', labels,
+    sorted.map(r => r.parsed.voys?.avg ?? null),
+    '#270697', 'rgba(39,6,151,0.08)', 'ms',
+    [{ value: T.latencyGood, color: 'rgba(25,135,84,0.45)' },
+     { value: T.latencyWarn, color: 'rgba(255,193,7,0.65)' }]
+  );
+
+  makeChart('chartJitter', 'wrap-jitter', labels,
+    sorted.map(r => Math.max(r.parsed.voys?.jitter ?? 0, r.parsed.osso?.jitter ?? 0, r.parsed.cloudflare?.jitter ?? 0) || null),
+    '#f97316', 'rgba(249,115,22,0.08)', 'ms',
+    [{ value: T.jitterGood, color: 'rgba(25,135,84,0.45)' },
+     { value: T.jitterWarn, color: 'rgba(255,193,7,0.65)' }]
+  );
+
+  makeChart('chartSIP', 'wrap-sip', labels,
+    sorted.map(r => r.parsed.sipResp ?? null),
+    '#0891b2', 'rgba(8,145,178,0.08)', 'ms'
+  );
+
+  makeChart('chartMOS', 'wrap-mos', labels,
+    sorted.map(r => r.parsed.avgMOS ?? null),
+    '#059669', 'rgba(5,150,105,0.08)', '',
+    [{ value: T.mosWarn, color: 'rgba(255,193,7,0.65)' },
+     { value: T.mosGood, color: 'rgba(25,135,84,0.45)' }],
+    1, 5
+  );
+}
+
+// ═══════════════════════════════════════════════════════
 //  Entry points
-// ─────────────────────────────────────────────────────
-function analyzeReport() {
+// ═══════════════════════════════════════════════════════
+function addReport() {
   const raw = document.getElementById('reportInput').value.trim();
   if (!raw) {
-    document.getElementById('reportInput').classList.add('is-invalid');
-    setTimeout(() => document.getElementById('reportInput').classList.remove('is-invalid'), 1500);
+    const ta = document.getElementById('reportInput');
+    ta.classList.add('is-invalid');
+    setTimeout(() => ta.classList.remove('is-invalid'), 1500);
     return;
   }
-  try {
-    const data = parseReport(raw);
-    renderResults(data);
-  } catch (e) {
+  let parsed;
+  try { parsed = parseReport(raw); } catch(e) {
     console.error(e);
-    document.getElementById('results').innerHTML =
-      `<div class="alert alert-danger">Could not parse the report. Make sure you pasted the full diagnosis report text.</div>`;
-    document.getElementById('results').classList.remove('d-none');
+    alert('Could not parse the report. Make sure you pasted the full diagnosis report text.');
+    return;
   }
+  const id = nextId++;
+  reports.push({ id, raw, parsed, status: getReportStatus(parsed) });
+  document.getElementById('reportInput').value = '';
+  renderReportsList();
+  renderTrendsSection();
+  // Auto-open the first report
+  if (reports.length === 1) setTimeout(() => toggleReport(id, true), 30);
 }
 
-function clearAll() {
+function deleteReport(id) {
+  const idx = reports.findIndex(r => r.id === id);
+  if (idx >= 0) reports.splice(idx, 1);
+  renderReportsList();
+  renderTrendsSection();
+}
+
+function toggleReport(id, forceOpen) {
+  const detail = document.getElementById(`detail-${id}`);
+  const btn    = document.getElementById(`toggle-btn-${id}`);
+  if (!detail) return;
+  const opening = forceOpen === true ? true : forceOpen === false ? false : detail.classList.contains('d-none');
+  detail.classList.toggle('d-none', !opening);
+  if (btn) btn.textContent = opening ? '▲' : '▼';
+}
+
+function clearInput() {
   document.getElementById('reportInput').value = '';
-  const el = document.getElementById('results');
-  el.innerHTML = '';
-  el.classList.add('d-none');
   document.getElementById('reportInput').focus();
 }
 
+function removeAll() {
+  if (reports.length === 0) return;
+  if (!confirm(`Remove all ${reports.length} report${reports.length > 1 ? 's' : ''}?`)) return;
+  reports.length = 0;
+  Object.values(chartInstances).forEach(c => c.destroy());
+  Object.keys(chartInstances).forEach(k => delete chartInstances[k]);
+  document.getElementById('reportsSection').classList.add('d-none');
+  document.getElementById('trendsSection').classList.add('d-none');
+  document.getElementById('trendsSection').innerHTML = '';
+}
+
 document.getElementById('reportInput').addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') analyzeReport();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') addReport();
 });
 </script>
 </body>
