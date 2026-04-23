@@ -2085,7 +2085,7 @@
     const openSessions = []
 
     for (const line of text.split('\n')) {
-      const tsMatch = line.match(/\[(\d{1,2}-\d{1,2}-\d{4},\s*\d{2}:\d{2}:\d{2})\]/)
+      const tsMatch = line.match(/\[(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4},\s*\d{1,2}:\d{2}:\d{2}(?:\s*[AP]M)?)\]/i)
       if (!tsMatch) continue
       const ts      = tsMatch[1]
       const content = line.slice(tsMatch.index + tsMatch[0].length).trim()
@@ -2170,9 +2170,15 @@
 
   function _parseConsoleTimestamp(ts) {
     if (!ts) return null
-    const m = ts.match(/(\d{1,2})-(\d{1,2})-(\d{4}),\s*(\d{2}):(\d{2}):(\d{2})/)
-    if (!m) return null
-    return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6])
+    const nlM = ts.match(/(\d{1,2})-(\d{1,2})-(\d{4}),\s*(\d{1,2}):(\d{2}):(\d{2})/)
+    if (nlM) return new Date(+nlM[3], +nlM[2] - 1, +nlM[1], +nlM[4], +nlM[5], +nlM[6])
+    const usM = ts.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}),\s*(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)/i)
+    if (usM) {
+      let h = +usM[4]; const pm = usM[7].toUpperCase() === 'PM'
+      if (pm && h !== 12) h += 12; else if (!pm && h === 12) h = 0
+      return new Date(+usM[3], +usM[1] - 1, +usM[2], h, +usM[5], +usM[6])
+    }
+    return null
   }
 
   function _formatDuration(seconds) {
