@@ -285,7 +285,7 @@ function parseReport(raw) {
   const privateHopCount = hopLines.filter(l => { const m = l.match(/:\s*(\d+\.\d+\.\d+\.\d+)/); return m && isPrivateIP(m[1]); }).length;
   const doubleNatTraceroute = hopCount > 0 ? (privateHopCount >= 2) : null;
 
-  const logSec = getSection(text, 'CONSOLE LOG');
+  const logSec = getSection(text, 'WEBPHONE CONSOLE LOG');
   const rawLog = logSec;
 
   // Extract session IDs from --- CALL N START/END --- blocks (needed before calls mapping)
