@@ -2,9 +2,49 @@
 
 A browser-based wizard that guides users through a network analysis for VoIP troubleshooting. It runs entirely in the browser — no installation, no backend, no data is sent anywhere. Use this as a Voys customer or feel free to make your own version.
 
+This repository contains two distinct tools:
+
+- **`voip-diagnose*.html`** — Customer-facing diagnostic wizard (fills out a report step by step)
+- **`report-analyzer.html`** — Support-staff tool for analyzing completed diagnosis reports
+
 ---
 
-## Versions
+## Report Analyzer (`report-analyzer.html`)
+
+A single-page tool for Voys support staff. Paste one or more completed diagnosis reports into it to get an instant structured analysis with actionable tips.
+
+### Features
+
+- **Multi-report support** — Add multiple reports from the same customer to see trends over time
+- **Automatic diagnosis** — Evaluates latency, jitter, packet loss, double-NAT, MOS, SIP connection, and audio devices; generates prioritized tips per finding
+- **Cross-report validation** — Warns when reports appear to be from different customers (mismatched client ID or subnet)
+- **Trend charts** — Line charts for latency, jitter, SIP response time, and average MOS across reports
+- **Per-call MOS bar chart** — Shown as soon as two or more calls with MOS data are present (even with a single report)
+- **Audio device warnings** — Detects Windows virtual routing devices ("Standaard", "Communicatie") and flags them as problematic
+- **Raw console log viewer** — Displays the full webphone console log with:
+  - Calls highlighted in light blue
+  - Audio device change lines highlighted in amber
+  - Call-control HID blocks (headset button events) highlighted in lavender
+  - File prefixes (`index-PLAewdqz.js:60`) stripped; timestamps shown in muted gray
+  - Fullscreen expand button for easier reading
+- **Portal link** — Direct link to the customer in the Voys partner portal (when a client ID is present in the log)
+
+### Supported log formats
+
+The analyzer parses both structured report output (from the diagnostic wizard) and raw webphone console logs pasted directly from browser DevTools.
+
+For console logs, calls are detected from session events (`session is accepted`, `call was terminated`, `MOS stats for terminated`). Both timestamp formats are supported:
+
+| Format | Example |
+|--------|---------|
+| Dutch / Windows Chrome | `[23-4-2026, 15:23:50]` |
+| US / Mac Chrome | `[4/23/2026, 1:14:52 PM]` |
+
+Reports in Dutch and English are both supported.
+
+---
+
+## Diagnostic Wizard Versions
 
 | File | Language | Audience | Notes |
 |------|----------|----------|-------|
@@ -45,7 +85,7 @@ Each file is a single self-contained HTML file that can be opened directly in a 
 
 ---
 
-## What it does
+## What the diagnostic wizard does
 
 The tool walks through four steps:
 
