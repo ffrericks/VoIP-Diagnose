@@ -577,10 +577,15 @@
                           style="font-size: 0.78rem; resize: vertical; background: #f8f9fa;"></textarea>
               </div>
 
-              <!-- Kopieer knop -->
-              <button class="btn btn-primary w-100" onclick="copyReport()">
-                Kopieer rapport
-              </button>
+              <!-- Kopieer knop / Download -->
+              <div class="d-flex gap-2">
+                <button class="btn btn-primary flex-fill" onclick="copyReport()">
+                  Kopieer rapport
+                </button>
+                <button class="btn btn-outline-primary flex-fill" onclick="downloadReport()">
+                  Download TXT
+                </button>
+              </div>
               <div id="copy-feedback" class="text-center text-success small mt-2 d-none">
                 ✓ Gekopieerd naar klembord
               </div>
@@ -2076,6 +2081,17 @@
     const fb = document.getElementById('copy-feedback')
     fb.classList.remove('d-none')
     setTimeout(() => fb.classList.add('d-none'), 3000)
+  }
+
+  function downloadReport() {
+    const text = document.getElementById('report-output').value
+    const blob = new Blob([text], { type: 'text/plain' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = 'voip-rapport.txt'
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   // ── Console log parser ───────────────────────────────────────────────────
